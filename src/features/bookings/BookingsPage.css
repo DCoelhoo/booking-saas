@@ -1,0 +1,193 @@
+
+.bookings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.bookings-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bookings-heading p {
+  font-size: 14px;
+  margin: 6px 0 0;
+}
+
+.date-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.date-navigation button {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #e7eaf0;
+  border-radius: 10px;
+  background: #f6f8fb;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.date-navigation input {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  text-align: center;
+  border: 1px solid #e7eaf0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px;
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.booking-form label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.booking-form input,
+.booking-form select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+  border: 1px solid #dce2ec;
+  border-radius: 9px;
+  background: white;
+  color: #172033;
+}
+
+.booking-form p {
+  font-size: 13px;
+}
+
+.booking-error {
+  color: #c52b40;
+  font-weight: 600;
+}
+
+.booking-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.booking-form-actions button {
+  flex: 1;
+}
+
+.daily-bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-agenda {
+  border: 1px dashed #dce2ec;
+  border-radius: 14px;
+  padding: 30px 16px;
+  text-align: center;
+}
+
+.empty-agenda p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.agenda-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+}
+
+.agenda-time {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border-radius: 9px;
+  background: #edf2ff;
+  color: #315cf5;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.agenda-time span {
+  font-size: 11px;
+}
+
+.agenda-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.agenda-details strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.agenda-details span {
+  font-size: 12px;
+  color: #7a8597;
+}
+
+.agenda-delete {
+  border: 0;
+  background: transparent;
+  color: #c52b40;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 359px) {
+  .agenda-card {
+    flex-wrap: wrap;
+  }
+
+  .agenda-delete {
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .bookings-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .booking-form {
+    max-width: 560px;
+  }
+
+  .date-navigation {
+    max-width: 420px;
+  }
+}

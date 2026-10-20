@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import './App.css'
 import ServicesPage from './features/services/ServicesPage'
+import BookingsPage from './features/bookings/BookingsPage'
 
 type Page =
   | 'Dashboard'
@@ -118,6 +119,8 @@ function App() {
           </div>
         ) : activePage === 'Serviços' ? (
           <ServicesPage />
+        ) : activePage === 'Marcações' ? (
+          <BookingsPage />
         ) : (
           <section className="panel">
             <h2>{activePage}</h2>
