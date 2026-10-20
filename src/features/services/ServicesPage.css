@@ -1,0 +1,145 @@
+
+.services-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.services-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.services-heading p {
+  font-size: 14px;
+  margin: 6px 0 0;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 46px;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #315cf5;
+  color: white;
+  border: none;
+}
+
+.secondary-button {
+  background: white;
+  border: 1px solid #dce2ec;
+  color: #172033;
+}
+
+.service-form,
+.service-card {
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.service-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-form label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.service-form input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid #dce2ec;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.form-actions button {
+  flex: 1;
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.service-info span {
+  color: #7a8597;
+  font-size: 13px;
+}
+
+.service-price {
+  color: #315cf5;
+  font-size: 18px;
+}
+
+.service-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.service-actions button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid #dce2ec;
+  background: white;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.service-actions .delete-button {
+  color: #bf3344;
+}
+
+@media (min-width: 768px) {
+  .services-heading {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .service-card {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .service-actions button {
+    flex: initial;
+  }
+
+  .service-form {
+    max-width: 560px;
+  }
+}
