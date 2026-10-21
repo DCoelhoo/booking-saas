@@ -1,0 +1,20 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "booking-saas",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-19",
+	"assets": {
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/api/*"
+		]
+	},
+	"d1_databases": [
+		{
+			"binding": "booking_saas_db",
+			"database_name": "booking-saas-db",
+			"database_id": "15a37b87-6615-415b-9713-3f5ca115bf8a",
+			"remote": false
+		}
+	]
+}
