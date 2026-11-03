@@ -125,6 +125,71 @@ export default {
     }
 
 
+    const serviceMatch = url.pathname.match(/^\/api\/services\/([^/]+)$/)
+
+    if (serviceMatch && request.method === 'PATCH') {
+      let body: unknown
+
+      try {
+        body = await request.json()
+      } catch {
+        return Response.json({ error: 'JSON inválido.' }, { status: 400 })
+      }
+
+      if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+        return Response.json({ error: 'Dados inválidos.' }, { status: 400 })
+      }
+
+      const updates: string[] = []
+      const values: (string | number)[] = []
+      const allowedFields = ['name', 'duration_minutes', 'price_cents', 'is_active']
+
+      if (Object.keys(body).some((key) => !allowedFields.includes(key))) {
+        return Response.json({ error: 'Campos não permitidos.' }, { status: 400 })
+      }
+
+      for (const [key, value] of Object.entries(body)) {
+        const valid = key === 'name'
+          ? typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 100
+          : key === 'is_active'
+            ? value === 0 || value === 1
+            : typeof value === 'number' && Number.isSafeInteger(value) &&
+              (key === 'duration_minutes' ? value > 0 : value >= 0)
+
+        if (!valid) {
+          return Response.json({ error: `Valor inválido para ${key}.` }, { status: 400 })
+        }
+
+        updates.push(`${key} = ?`)
+        values.push(typeof value === 'string' ? value.trim() : value as number)
+      }
+
+      if (updates.length === 0) {
+        return Response.json({ error: 'Indica pelo menos um campo para atualizar.' }, { status: 400 })
+      }
+
+      try {
+        const service = await env.booking_saas_db
+          .prepare(`
+            UPDATE services
+            SET ${updates.join(', ')}
+            WHERE id = ? AND organization_id = ?
+            RETURNING id, name, duration_minutes, price_cents, is_active
+          `)
+          .bind(...values, serviceMatch[1], 'org-demo')
+          .first()
+
+        if (!service) {
+          return Response.json({ error: 'Serviço não encontrado.' }, { status: 404 })
+        }
+
+        return Response.json(service)
+      } catch (error) {
+        console.error('Erro ao atualizar serviço:', error)
+        return Response.json({ error: 'Não foi possível atualizar o serviço.' }, { status: 500 })
+      }
+    }
+
     return Response.json(
       { error: 'Endpoint não encontrado' },
       { status: 404 }
