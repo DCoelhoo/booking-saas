@@ -13,19 +13,20 @@ body {
   min-height: 100vh;
 }
 :root {
-  --palette-night: #05161a;
-  --palette-deep: #072e33;
-  --palette-teal: #0c7075;
-  --palette-turquoise: #0f969c;
-  --palette-sky: #6da5c0;
-  --palette-slate: #294d61;
+  --palette-night: #0a090c;
+  --palette-deep: #07393c;
+  --palette-teal: #2c666e;
+  --palette-turquoise: #90ddf0;
+  --palette-sky: #90ddf0;
+  --palette-slate: #2c666e;
+  --palette-platinum: #f0edee;
   --color-text: var(--palette-night);
-  --color-muted: #496571;
-  --color-primary: var(--palette-teal);
-  --color-primary-hover: var(--palette-deep);
-  --color-background: #f0f6f7;
-  --color-border: #c8dce2;
-  --color-soft: #e3f1f1;
+  --color-muted: var(--palette-teal);
+  --color-primary: var(--palette-deep);
+  --color-primary-hover: var(--palette-teal);
+  --color-background: var(--palette-platinum);
+  --color-border: color-mix(in srgb, var(--palette-teal) 28%, white);
+  --color-soft: color-mix(in srgb, var(--palette-sky) 25%, var(--palette-platinum));
   --public-brand: var(--color-primary);
   --public-ink: white;
 }

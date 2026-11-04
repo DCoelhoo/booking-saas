@@ -208,7 +208,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
         const trialStartedAt = Date.now()
         try {
           await db.batch([
-            db.prepare('INSERT INTO organizations (id, name, slug, contact_email, trial_started_at, trial_ends_at) VALUES (?, ?, ?, ?, ?, ?)')
+            db.prepare('INSERT INTO organizations (id, name, slug, contact_email, trial_started_at, trial_ends_at, brand_color) VALUES (?, ?, ?, ?, ?, ?, \'#07393c\')')
               .bind(orgId, business_name.trim(), slug, email, trialStartedAt, trialStartedAt + 14 * 86_400_000),
             db.prepare('INSERT INTO users (id, organization_id, email, full_name, password_hash) VALUES (?, ?, ?, ?, ?)')
               .bind(userId, orgId, email, full_name.trim(), hashed),
