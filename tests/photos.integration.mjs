@@ -8,7 +8,7 @@ import { Miniflare,convertV4MiniflareOptions } from 'miniflare'
 import { authenticateDemo,demoCookie } from './account-fixture.mjs'
 import { applySql } from './apply-sql.mjs'
 
-test('profile photos persist in R2, remain scoped to their owner and disappear after replacement or removal',async()=>{
+test('personal and business photos persist in R2, enforce roles and disappear after replacement or removal',async()=>{
  const directory=await mkdtemp(join(tmpdir(),'booking-photos-'))
  const options=convertV4MiniflareOptions({modules:true,scriptPath:'dist/worker/index.js',compatibilityDate:'2026-10-19',d1Databases:{booking_saas_db:'photo-db'},r2Buckets:{PROFILE_PHOTOS:'photos'}})
  options.resourcePersistencePath=directory
@@ -49,8 +49,41 @@ test('profile photos persist in R2, remain scoped to their owner and disappear a
   assert.equal((await runtime.dispatchFetch('http://localhost'+anaUrl)).status,404)
   assert.equal((await runtime.dispatchFetch('http://localhost'+anaUrl,{headers:{Cookie:demoCookie}})).status,200)
   assert.equal((await request('me/photo','DELETE',undefined,staffCookie)).status,401)
+  // Business branding belongs to the organization, independently of personal photos.
+  assert.equal((await request('business/photos/cover','POST',{image},'')).status,401)
+  assert.equal((await request('business/photos/cover','POST',{image},staffCookie)).status,401)
+  // Reactivate Ana to check the authenticated staff permission boundary.
+  await db.prepare("UPDATE staff_members SET is_active=1 WHERE id='ana'").run()
+  await db.prepare("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES (?,'ana-user',?)").bind(createHash('sha256').update(staffToken).digest('hex'),Date.now()+86400000).run()
+  assert.equal((await request('business/photos/cover','POST',{image},staffCookie)).status,403)
+  assert.equal((await request('business/photos/cover','POST',{image:'invalid'})).status,400)
+  const branding=await request('business/photos/cover','POST',{image,organization_id:'other'})
+  assert.equal(branding.status,200,await branding.clone().text())
+  const coverUrl=(await branding.json()).organization.cover_url
+  assert.equal((await db.prepare("SELECT cover_photo_key FROM organizations WHERE id='other'").first()).cover_photo_key,'')
+  assert.deepEqual(Buffer.from(await(await runtime.dispatchFetch('http://localhost'+coverUrl)).arrayBuffer()),photo)
+  const profileResult=await request('business/photos/profile','POST',{image})
+  assert.equal(profileResult.status,200)
+  const businessAvatar=(await profileResult.json()).organization.profile_photo_url
+  const brandedPublic=(await(await request('public/demo','GET',undefined,'')).json()).business
+  assert.equal(brandedPublic.cover_url,coverUrl);assert.equal(brandedPublic.profile_photo_url,businessAvatar)
+  assert.equal(JSON.stringify(brandedPublic).includes('photo_key'),false)
+  assert.equal((await(await request('auth/session')).json()).user.photo_url,url)
+  const coverReplacement=await request('business/photos/cover','POST',{image})
+  assert.equal(coverReplacement.status,200)
+  const newCover=(await coverReplacement.json()).organization.cover_url
+  assert.notEqual(coverUrl,newCover)
+  assert.equal((await runtime.dispatchFetch('http://localhost'+coverUrl)).status,404)
+  await runtime.dispose();runtime=new Miniflare(options);db=await runtime.getD1Database('booking_saas_db')
+  assert.equal((await runtime.dispatchFetch('http://localhost'+newCover)).status,200)
+  assert.equal((await request('business/photos/cover','DELETE')).status,200)
+  assert.equal((await runtime.dispatchFetch('http://localhost'+newCover)).status,404)
+  await db.prepare("UPDATE staff_members SET is_active=0 WHERE id='ana'").run()
   // Retain read/write account controls even after the business trial ends.
   await db.prepare("UPDATE organizations SET trial_ends_at=0 WHERE id='org-demo'").run()
+  assert.equal((await request('business/photos/profile','POST',{image})).status,402)
+  assert.equal((await request('business/photos/profile','DELETE')).status,200)
+  assert.equal((await runtime.dispatchFetch('http://localhost'+businessAvatar)).status,404)
   const replacement=await request('me/photo','POST',{image})
   assert.equal(replacement.status,200)
   const replacementUrl=(await replacement.json()).user.photo_url

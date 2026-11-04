@@ -66,7 +66,7 @@ Em **Definições → Google Calendar e Apple/iCloud**, cada pessoa pode criar u
 link privado para subscrever a sua agenda no calendário pessoal. A ligação é de
 leitura e requer uma aplicação publicada em HTTPS para funcionar nesses serviços.
 Ver [calendários](docs/calendar.md).
-O envio de imagens para R2 e a verificação de email ficam para as próximas etapas.
+Em **Definições → Imagens do estabelecimento**, o dono pode enviar uma capa opcional e uma fotografia circular para a página pública. Sem imagens, aparecem um fundo com a cor do negócio e as iniciais. As fotografias usam o mesmo armazenamento R2 das imagens pessoais. A verificação de email continua pendente.
 A recuperação de palavra-passe está disponível no login. Os lembretes por email
 são preparados cerca de 24 horas antes da marcação; podem ser testados nas
 Definições em modo local. Ver [emails](docs/emails.md) e [lembretes](docs/reminders.md).

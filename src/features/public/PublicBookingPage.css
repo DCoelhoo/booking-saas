@@ -1,24 +1,15 @@
 .public-booking { min-height: 100dvh; background: var(--color-background); color: var(--color-text); --public-brand: var(--color-primary); --public-ink: white; }
-.public-header, .public-footer { max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.public-header { border-bottom: 1px solid var(--color-border); }
-.public-header > a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0; overflow-wrap: anywhere; }
-.public-header > span, .public-footer { color: var(--color-muted); font-size: 13px; }
-.public-mark { background: var(--public-brand); color: var(--public-ink); border-radius: 13px; min-width: 44px; height: 44px; display: grid; place-items: center; font-weight: 700; }
-.public-layout { max-width: 1180px; margin: 0 auto; padding: 56px 24px 72px; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 64px; align-items: start; }
-.public-business { padding-top: 24px; min-width: 0; }
-.public-logo { width: 88px; height: 88px; object-fit: contain; margin-bottom: 24px; border-radius: 14px; background: white; }
-.public-logo[hidden] { display: none; }
-.public-eyebrow { text-transform: uppercase; letter-spacing: 1.8px; font-size: 11px; font-weight: 700; color: var(--color-muted); display: block; }
-.public-business h1 { font-size: clamp(28px, 3.8vw, 44px); line-height: 1.16; letter-spacing: -1.6px; margin: 18px 0; overflow-wrap: anywhere; }
-.public-description { font-size: 16px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-muted); }
-.public-facts { margin-top: 32px; display: grid; gap: 12px; }
-.public-facts p { padding-left: 16px; border-left: 3px solid var(--public-brand); margin: 0; }
-.public-facts strong, .public-facts span { display: block; font-size: 14px; }
-.public-facts strong { color: var(--color-text); margin-bottom: 5px; }
-.public-facts span { color: var(--color-muted); }
-.public-contact { margin-top: 36px; display: grid; gap: 10px; font-size: 14px; overflow-wrap: anywhere; }
-.public-contact h2 { font-size: 14px; }
-.public-contact a, .public-footer a { color: var(--color-text); text-underline-offset: 4px; }
+.public-footer { max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.public-identity { max-width: 1180px; margin: 0 auto; text-align: center; padding-bottom: 16px; }
+.public-cover { height: clamp(150px, 24vw, 280px); background: linear-gradient(120deg,var(--palette-deep),var(--public-brand)); overflow: hidden; border-radius: 0 0 24px 24px; }
+.public-cover img { width: 100%; height: 100%; object-fit: cover; }
+.public-business-avatar { position: relative; width: 104px; height: 104px; border: 5px solid var(--color-background); border-radius: 50%; margin: -52px auto 12px; display: grid; place-items: center; background: var(--public-brand); color: var(--public-ink); font-size: 30px; font-weight: 700; overflow: hidden; }
+.public-business-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: white; }
+.public-identity h1 { margin: 0 16px 10px; font-size: clamp(25px,4vw,34px); overflow-wrap: anywhere; }
+.public-contact { margin: 0 auto; max-width: 90%; font-size: 14px; color: var(--color-muted); overflow-wrap: anywhere; }
+.public-contact summary { cursor: pointer; }
+.public-contact a { display: block; margin-top: 10px; color: inherit; }
+.public-layout { max-width: 760px; margin: 0 auto; padding: 16px 24px 56px; }
 .public-reservation { background: white; border: 1px solid var(--color-border); border-radius: 22px; padding: 30px; box-shadow: 0 16px 48px #17203308; min-width: 0; }
 .public-reservation h2 { font-size: 25px; letter-spacing: -0.6px; }
 .public-reservation p { font-size: 14px; line-height: 1.6; color: var(--color-muted); }
@@ -58,13 +49,8 @@
 .public-loading { min-height: 100dvh; padding: 30px; display: grid; align-content: center; justify-items: center; gap: 20px; text-align: center; }
 .public-loading button { border: 1px solid var(--color-border); padding: 12px 20px; background: white; border-radius: 9px; cursor: pointer; }
 @media (max-width: 800px) {
-  .public-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 28px 16px 40px; }
-  .public-business { padding: 0; }
-  .public-business h1 { max-width: 620px; font-size: 32px; }
-  .public-facts { display: none; }
-  .public-contact { margin-top: 20px; }
-  .public-header { padding: 18px 16px; }
-  .public-header > span { display: none; }
+  .public-layout { padding: 8px 16px 40px; }
+
   .public-reservation { padding: 22px 18px; border-radius: 16px; }
   .public-steps { gap: 14px; }
   .public-service { padding: 15px; gap: 12px; }

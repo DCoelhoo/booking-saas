@@ -51,3 +51,23 @@ backup: a exportação JSON da base não contém os ficheiros das fotografias.
 Os testes usam uma imagem fictícia e armazenamento temporário. Cobrem isolamento,
 assinaturas e tamanhos inválidos, substituição, remoção, perfis inativos,
 persistência após reinício e ausência de acesso a referências antigas.
+
+## Fotografias do estabelecimento
+
+Em Definições → Imagens do estabelecimento, o dono pode enviar, substituir e
+remover uma capa opcional e uma fotografia de perfil circular. A capa é recortada
+ao centro para 1024 × 400; a fotografia de perfil usa 512 × 512. Aplicam-se os
+mesmos limites e validações das fotografias pessoais. Não existe editor manual
+de recorte. Os envios são guardados imediatamente e atualizam a pré-visualização.
+
+A migração 0013_business_photos.sql adiciona cover_photo_key e profile_photo_key
+a organizations. O mesmo bucket R2 usa o prefixo business/. Os endpoints são
+POST/DELETE /api/business/photos/cover e /api/business/photos/profile; a leitura
+pública é GET /api/business-photos/:uuid.jpg, apenas para referências atuais.
+O estabelecimento vem sempre da sessão, e colaboradores não podem alterar estas
+imagens. O envio exige teste/subscrição ativa; a remoção continua disponível
+depois da expiração. A substituição também protege contra alterações concorrentes.
+
+Sem capa, a página mostra um fundo com a cor do negócio. Sem fotografia de perfil,
+usa o logótipo HTTPS existente ou as iniciais. A apresentação pública mostra apenas
+o nome, os contactos recolhidos numa secção expansível e o formulário de marcação.

@@ -10,7 +10,7 @@ import { handleBookings } from './bookings.ts'
 import { handlePublicBooking } from './publicBooking.ts'
 import { queueBookingReminders } from './reminders.ts'
 import { handleStaff } from './staff.ts'
-import { publicPhoto, myPhoto, type PhotoEnv } from './photos.ts'
+import { publicPhoto, myPhoto, businessPhoto, publicBusinessPhoto, type PhotoEnv } from './photos.ts'
 import { handleBookingManagement } from './bookingLifecycle.ts'
 import { jsonBody } from './auth.ts'
 import { calendarFeed,calendarSettings } from './calendar.ts'
@@ -25,6 +25,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (invalidMutation) return invalidMutation
     const feedResponse = await calendarFeed(request,env.booking_saas_db)
     if(feedResponse) return feedResponse
+    const businessImageResponse = await publicBusinessPhoto(request,env)
+    if (businessImageResponse) return businessImageResponse
     const photoResponse = await publicPhoto(request,env)
     if (photoResponse) return photoResponse
     const managementResponse = await handleBookingManagement(request, env)
@@ -38,6 +40,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const organizationId = account.organization.id
     const calendarResponse = await calendarSettings(request,env,account)
     if(calendarResponse) return calendarResponse
+    const businessPhotoResponse = await businessPhoto(request,env,account)
+    if (businessPhotoResponse) return businessPhotoResponse
     const myPhotoResponse = await myPhoto(request,env,account)
     if (myPhotoResponse) return myPhotoResponse
     if (account.user.role === 'staff') {

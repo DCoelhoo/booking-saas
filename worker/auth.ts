@@ -9,7 +9,7 @@ export type Account = {
   user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null; photo_url: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
-    phone: string; brand_color: string; logo_url: string
+    phone: string; brand_color: string; logo_url: string; cover_url: string; profile_photo_url: string
   }
 }
 
@@ -74,6 +74,8 @@ export async function getAccount(db: D1Database, userId: string): Promise<Accoun
     .bind(userId).first<Account['user'] & { organization_id: string }>()
   if (!user) return null
   const row = await db.prepare(`SELECT id, name, slug, description, contact_email, phone, brand_color, logo_url,
+    CASE WHEN cover_photo_key != '' THEN '/api/business-photos/' || cover_photo_key || '.jpg' ELSE '' END AS cover_url,
+    CASE WHEN profile_photo_key != '' THEN '/api/business-photos/' || profile_photo_key || '.jpg' ELSE '' END AS profile_photo_url,
     trial_started_at, trial_ends_at, subscription_status, paid_until
     FROM organizations WHERE id = ?`).bind(user.organization_id).first<Account['organization'] & SubscriptionFields>()
   if (!row) return null

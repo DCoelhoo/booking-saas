@@ -95,3 +95,50 @@ export async function myPhoto(request: Request, env: PhotoEnv, account: Account)
   if (member.photo_key) await env.PROFILE_PHOTOS?.delete(`profiles/${member.photo_key}.jpg`).catch(()=>undefined)
   return Response.json(await getAccount(env.booking_saas_db,account.user.id))
 }
+
+export async function businessPhoto(request: Request, env: PhotoEnv, account: Account): Promise<Response | null> {
+  const match = new URL(request.url).pathname.match(/^\/api\/business\/photos\/(cover|profile)$/)
+  if (!match) return null
+  if (account.user.role !== 'owner') return Response.json({ error:'Não tens permissão para esta área.' },{status:403})
+  if (request.method === 'POST' && !account.subscription.can_manage) return Response.json({error:'A personalização requer uma subscrição ativa.'},{status:402})
+  const column = match[1] === 'cover' ? 'cover_photo_key' : 'profile_photo_key'
+  if (!['POST','DELETE'].includes(request.method)) return Response.json({ error: 'Método não permitido.' }, { status: 405 })
+  if (!await rateLimit(env.booking_saas_db,`business-photo:${account.user.id}`,20)) return Response.json({ error: 'Demasiadas alterações. Tenta novamente mais tarde.' }, { status: 429 })
+  const member = await env.booking_saas_db.prepare(`SELECT ${column} AS photo_key FROM organizations WHERE id=?`)
+    .bind(account.organization.id).first<{ photo_key:string }>()
+  if (!member) return Response.json({ error: 'Perfil não encontrado.' }, { status: 404 })
+  let key = ''
+  if (request.method === 'POST') {
+    const image = await readImage(request)
+    if (!image || !/^[A-Za-z0-9+/]+={0,2}$/.test(image) || image.length % 4 !== 0) return Response.json({ error: 'Fotografia inválida ou demasiado grande.' }, { status: 400 })
+    const bytes = Buffer.from(image,'base64')
+    if (!validJpeg(bytes)) return Response.json({ error: 'Envia uma fotografia JPEG até 256 KB e 1024 píxeis.' }, { status: 400 })
+    if (!env.PROFILE_PHOTOS) return unavailable()
+    key = crypto.randomUUID()
+    await env.PROFILE_PHOTOS.put(`business/${key}.jpg`,bytes,{ httpMetadata:{ contentType:'image/jpeg' } })
+  }
+  try {
+    const updated = await env.booking_saas_db.prepare(`UPDATE organizations SET ${column}=? WHERE id=? AND ${column}=? RETURNING id`)
+      .bind(key,account.organization.id,member.photo_key).first()
+    if (!updated) {
+      if (key) await env.PROFILE_PHOTOS?.delete(`business/${key}.jpg`)
+      return Response.json({ error:'A fotografia mudou entretanto. Atualiza a página e tenta novamente.' },{ status:409 })
+    }
+  } catch (error) {
+    if (key) await env.PROFILE_PHOTOS?.delete(`business/${key}.jpg`).catch(()=>undefined)
+    throw error
+  }
+  // An old object can never be fetched once its reference has been replaced or removed.
+  if (member.photo_key) await env.PROFILE_PHOTOS?.delete(`business/${member.photo_key}.jpg`).catch(()=>undefined)
+  return Response.json(await getAccount(env.booking_saas_db,account.user.id))
+}
+
+export async function publicBusinessPhoto(request:Request,env:PhotoEnv):Promise<Response|null> {
+  const path = new URL(request.url).pathname
+  if (!path.startsWith('/api/business-photos/')) return null
+  const match = path.match(/^\/api\/business-photos\/([0-9a-f-]{36})\.jpg$/)
+  const found = match && request.method === 'GET' && await env.booking_saas_db.prepare('SELECT id FROM organizations WHERE cover_photo_key=? OR profile_photo_key=?').bind(match[1],match[1]).first()
+  const object = found && await env.PROFILE_PHOTOS?.get(`business/${match![1]}.jpg`)
+  if (!object) return Response.json({error:'Fotografia não encontrada.'},{status:404})
+  return new Response(object.body,{headers:{'Content-Type':'image/jpeg','X-Content-Type-Options':'nosniff','Content-Length':String(object.size)}})
+}

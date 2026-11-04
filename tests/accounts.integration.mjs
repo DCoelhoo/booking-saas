@@ -24,7 +24,7 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     let db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql', '0010_staff.sql', '0011_profile_photos.sql', '0012_calendar_subscriptions.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql', '0010_staff.sql', '0011_profile_photos.sql', '0012_calendar_subscriptions.sql', '0013_business_photos.sql']) {
       const schema = await readFile(`migrations/${file}`, 'utf8')
       await applySql(db,schema)
     }

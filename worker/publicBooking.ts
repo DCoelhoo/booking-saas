@@ -11,7 +11,7 @@ import { bookingLink } from './bookingLifecycle.ts'
 
 type PublicOrganization = SubscriptionFields & {
   id: string; name: string; slug: string; description: string; contact_email: string
-  phone: string; logo_url: string; brand_color: string; availability: string; booking_payment_settings: string; booking_change_hours: number
+  phone: string; logo_url: string; cover_url: string; profile_photo_url: string; brand_color: string; availability: string; booking_payment_settings: string; booking_change_hours: number
 }
 type PublicService = { id: string; name: string; duration_minutes: number; price_cents: number }
 const unavailable = () => Response.json({ error: 'As marcações online estão temporariamente indisponíveis. Contacta o negócio.' }, { status: 403 })
@@ -53,6 +53,8 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
   if (!match || !validSlug(match[1])) return Response.json({ error: 'Página não encontrada.' }, { status: 404 })
   const db = env.booking_saas_db
   const org = await db.prepare(`SELECT id, name, slug, description, contact_email, phone, logo_url, brand_color,
+    CASE WHEN cover_photo_key != '' THEN '/api/business-photos/' || cover_photo_key || '.jpg' ELSE '' END AS cover_url,
+    CASE WHEN profile_photo_key != '' THEN '/api/business-photos/' || profile_photo_key || '.jpg' ELSE '' END AS profile_photo_url,
     availability, booking_payment_settings, booking_change_hours, trial_started_at, trial_ends_at, subscription_status, paid_until
     FROM organizations o WHERE slug = ? AND EXISTS (SELECT 1 FROM users u WHERE u.organization_id = o.id)`)
     .bind(match[1]).first<PublicOrganization>()
@@ -66,7 +68,7 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
     const { results } = active ? await db.prepare(`SELECT id, name, duration_minutes, price_cents
       FROM services WHERE organization_id = ? AND is_active = 1 ORDER BY name`).bind(org.id).all<PublicService>() : { results: [] }
     return Response.json({ business: { name: org.name, slug: org.slug, description: org.description,
-      contact_email: org.contact_email, phone: org.phone, logo_url: org.logo_url, brand_color: org.brand_color },
+      contact_email: org.contact_email, phone: org.phone, logo_url: org.logo_url, cover_url: org.cover_url, profile_photo_url: org.profile_photo_url, brand_color: org.brand_color },
       available: active, today: calendar.today, max_date: calendar.maxDate, time_zone: 'Europe/Lisbon', change_hours: org.booking_change_hours,
       staff: active ? staff : [], services: results.map((service) => ({ ...service, payment: paymentQuote(service.price_cents, policy) })) })
   }

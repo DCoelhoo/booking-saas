@@ -1,24 +1,8 @@
+import { preparePhoto } from './preparePhoto'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { secureFetch, type Account } from './accountApi'
 import Avatar from './Avatar'
 
-async function preparePhoto(file: File): Promise<string> {
-  if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) throw Error('Escolhe uma imagem JPG, PNG ou WebP até 10 MB.')
-  const bitmap = await createImageBitmap(file)
-  try {
-    if (!bitmap.width || !bitmap.height || bitmap.width * bitmap.height > 40_000_000) throw Error('A imagem é demasiado grande. Escolhe uma fotografia mais pequena.')
-    const canvas = document.createElement('canvas')
-    canvas.width = 512; canvas.height = 512
-    const context = canvas.getContext('2d')
-    if (!context) throw Error('Não foi possível preparar a fotografia neste browser.')
-    context.fillStyle = '#ffffff'; context.fillRect(0,0,512,512)
-    const side = Math.min(bitmap.width,bitmap.height)
-    context.drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,512,512)
-    const data = canvas.toDataURL('image/jpeg',0.85).split(',')[1]
-    if (data.length > 349_528) throw Error('A fotografia continua demasiado grande. Escolhe outra imagem.')
-    return data
-  } finally { bitmap.close() }
-}
 
 export default function ProfilePhoto({ account, onChange }: { account:Account; onChange:(account:Account)=>void }) {
   const input = useRef<HTMLInputElement>(null)

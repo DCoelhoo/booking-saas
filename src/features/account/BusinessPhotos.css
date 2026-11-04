@@ -1,0 +1,10 @@
+.business-photos > p { color: var(--color-muted); }
+.business-photo-preview { max-width: 640px; margin: 24px 0; }
+.business-cover-preview { height: 180px; border-radius: 16px; background: linear-gradient(120deg,var(--palette-deep),var(--palette-teal)); overflow: hidden; }
+.business-cover-preview img { width: 100%; height: 100%; object-fit: cover; }
+.business-avatar-preview { position: relative; display: grid; place-items: center; margin: -44px auto 0; width: 88px; height: 88px; overflow: hidden; border: 4px solid white; border-radius: 50%; background: var(--color-primary); color: white; font-size: 28px; }
+.business-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.business-photo-control { display: grid; justify-items: start; gap: 10px; margin-top: 24px; }
+.business-photo-control label { font-weight: 600; }
+.business-photo-control small { color: var(--color-muted); }
+.business-photo-control input { max-width: 100%; }

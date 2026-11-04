@@ -5,7 +5,7 @@ import Avatar from '../account/Avatar'
 
 type Service = { id: string; name: string; duration_minutes: number; price_cents: number; payment: ReturnType<typeof paymentQuote> }
 type PageData = {
-  business: { name: string; slug: string; description: string; contact_email: string; phone: string; logo_url: string; brand_color: string }
+  business: { name: string; slug: string; description: string; contact_email: string; phone: string; logo_url: string; cover_url: string; profile_photo_url: string; brand_color: string }
   available: boolean; today: string; max_date: string; time_zone: string; services: Service[]; staff: {id:string;name:string;photo_url:string}[]; change_hours: number
 }
 type Slot = { start_time: string; end_time: string }
@@ -108,20 +108,16 @@ export default function PublicBookingPage({ slug, preview = false }: { slug: str
   const business = data.business
   const initials = business.name.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()
   return <div className="public-booking" style={{ '--public-brand': business.brand_color, '--public-ink': brandInk(business.brand_color) } as CSSProperties}>
-    <header className="public-header"><a href={`/${business.slug}${preview?'?preview=1':''}`} aria-label={business.name}>
-      <span className="public-mark">{initials}</span><strong>{business.name}</strong></a><span>Marcações online</span></header>
+    <section className="public-identity" aria-label="O estabelecimento">
+      <div className="public-cover">{business.cover_url && <img key={business.cover_url} src={business.cover_url} alt="" onError={event=>{event.currentTarget.hidden=true}} />}</div>
+      <div className="public-business-avatar"><span aria-hidden="true">{initials}</span>{(business.profile_photo_url || business.logo_url) && <img key={business.profile_photo_url || business.logo_url} src={business.profile_photo_url || business.logo_url} alt={`Fotografia de ${business.name}`} referrerPolicy="no-referrer" onError={event=>{event.currentTarget.hidden=true}} />}</div>
+      <h1>{business.name}</h1>
+      {(business.contact_email || business.phone) && <details className="public-contact"><summary>Contactos</summary>
+        {business.contact_email && <a href={`mailto:${business.contact_email}`} onClick={preview?event=>event.preventDefault():undefined}>{business.contact_email}</a>}
+        {business.phone && <a href={`tel:${business.phone.replace(/[^+\d]/g,'')}`} onClick={preview?event=>event.preventDefault():undefined}>{business.phone}</a>}
+      </details>}
+    </section>
     <main className="public-layout">
-      <aside className="public-business">
-        {business.logo_url && <img className="public-logo" src={business.logo_url} alt={`Logótipo de ${business.name}`} referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.hidden = true }} />}
-        <span className="public-eyebrow">O teu próximo compromisso</span>
-        <h1>Reserva um momento<br />com {business.name}.</h1>
-        <p className="public-description">{business.description || 'Escolhe o serviço e o horário que te dão mais jeito. Nós tratamos do resto.'}</p>
-        <div className="public-facts"><p><strong>À tua medida</strong><span>Escolhe entre os horários disponíveis.</span></p><p><strong>Sem criar conta</strong><span>Precisamos apenas dos teus contactos.</span></p></div>
-        {(business.contact_email || business.phone) && <section className="public-contact"><h2>Precisas de ajuda?</h2>
-          {business.contact_email && <a href={`mailto:${business.contact_email}`} onClick={preview?(event)=>event.preventDefault():undefined}>{business.contact_email}</a>}
-          {business.phone && <a href={`tel:${business.phone.replace(/[^+\d]/g, '')}`} onClick={preview?(event)=>event.preventDefault():undefined}>{business.phone}</a>}
-        </section>}
-      </aside>
       <section className="public-reservation" aria-label="Reservar uma marcação">
         {receipt ? <div className="public-success" role="status"><span className="public-success-symbol" aria-hidden="true">✓</span>
           <h2>{({ confirmed: 'Marcação confirmada', canceled: 'Marcação cancelada', completed: 'Marcação concluída', no_show: 'Falta de comparência registada' } as Record<string, string>)[receipt.booking.status]}</h2><p>{receipt.booking.service_name} · {receipt.booking.staff_name}</p>
