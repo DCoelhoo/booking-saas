@@ -1,5 +1,5 @@
 import type { ExecutionContext } from '@cloudflare/workers-types'
-import { flushEmailOutbox, localPreview, previewEmails, type EmailEnv } from './email.ts'
+import { flushEmailOutbox, localPreview, previewEmails } from './email.ts'
 import { authenticate, checkMutation, handleAuth } from './auth.ts'
 import { updateProfile } from './profile.ts'
 import { subscriptionRequired } from './subscriptions.ts'
@@ -10,17 +10,20 @@ import { handleBookings } from './bookings.ts'
 import { handlePublicBooking } from './publicBooking.ts'
 import { queueBookingReminders } from './reminders.ts'
 import { handleStaff } from './staff.ts'
+import { publicPhoto, myPhoto, type PhotoEnv } from './photos.ts'
 import { handleBookingManagement } from './bookingLifecycle.ts'
 import { jsonBody } from './auth.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
-type Env = EmailEnv
+type Env = PhotoEnv
 
 async function handleRequest(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     if (url.pathname === '/api/health') return Response.json({ status: 'ok', application: 'booking-saas' })
     const invalidMutation = checkMutation(request)
     if (invalidMutation) return invalidMutation
+    const photoResponse = await publicPhoto(request,env)
+    if (photoResponse) return photoResponse
     const managementResponse = await handleBookingManagement(request, env)
     if (managementResponse) return managementResponse
     const publicResponse = await handlePublicBooking(request, env)
@@ -30,6 +33,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    const myPhotoResponse = await myPhoto(request,env,account)
+    if (myPhotoResponse) return myPhotoResponse
     if (account.user.role === 'staff') {
       const allowed = /^\/api\/bookings(?:\/[^/]+)?$/.test(url.pathname) ||
         (request.method === 'GET' && ['/api/services','/api/availability','/api/booking-payment-settings','/api/subscription','/api/staff'].includes(url.pathname))

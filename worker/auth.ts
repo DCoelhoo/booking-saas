@@ -6,7 +6,7 @@ import { appUrl, configuredEmail, emailStatement, localPreview, type EmailEnv } 
 
 export type Account = {
   subscription: ReturnType<typeof subscriptionAccess>
-  user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null }
+  user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null; photo_url: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
     phone: string; brand_color: string; logo_url: string
@@ -69,7 +69,7 @@ function newSession(db: D1Database, userId: string) {
     .bind(digest(token), userId, Date.now() + sessionSeconds * 1000) }
 }
 export async function getAccount(db: D1Database, userId: string): Promise<Account | null> {
-  const user = await db.prepare(`SELECT id, email, full_name, organization_id, role, staff_id FROM users WHERE id = ?
+  const user = await db.prepare(`SELECT id, email, full_name, organization_id, role, staff_id, COALESCE((SELECT CASE WHEN m.photo_key != '' THEN '/api/staff-photos/' || m.photo_key || '.jpg' ELSE '' END FROM staff_members m WHERE m.id=users.staff_id),'') AS photo_url FROM users WHERE id = ?
     AND (role = 'owner' OR EXISTS (SELECT 1 FROM staff_members m WHERE m.id = users.staff_id AND m.organization_id = users.organization_id AND m.is_active = 1))`)
     .bind(userId).first<Account['user'] & { organization_id: string }>()
   if (!user) return null
@@ -79,7 +79,7 @@ export async function getAccount(db: D1Database, userId: string): Promise<Accoun
   if (!row) return null
   const { trial_started_at, trial_ends_at, subscription_status, paid_until, ...organization } = row
   return {
-      user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, staff_id: user.staff_id }, organization,
+      user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, staff_id: user.staff_id, photo_url: user.photo_url }, organization,
     subscription: subscriptionAccess({ trial_started_at, trial_ends_at, subscription_status, paid_until }),
   }
 }

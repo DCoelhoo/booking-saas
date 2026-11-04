@@ -8,6 +8,7 @@ import DashboardPage from './features/account/DashboardPage'
 import SubscriptionBanner from './features/account/SubscriptionBanner'
 import InvoicesPage from './features/account/InvoicesPage'
 import StaffPage from './features/account/StaffPage'
+import Avatar from './features/account/Avatar'
 import type { Account } from './features/account/accountApi'
 
 type Page =
@@ -37,7 +38,6 @@ function App({ account, onAccountChange, onLogout }: {
   const [activePage, setActivePage] = useState<Page>(isOwner ? 'Dashboard':'Marcações')
   const [logoutBusy, setLogoutBusy] = useState(false)
   const [logoutError, setLogoutError] = useState('')
-  const initials = account.organization.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
   async function logout() {
     if (logoutBusy) return
     setLogoutBusy(true); setLogoutError('')
@@ -68,7 +68,7 @@ function App({ account, onAccountChange, onLogout }: {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="avatar">{initials}</div>
+          <Avatar name={account.user.full_name} src={account.user.photo_url} />
           <div>
             <strong>{account.organization.name}</strong>
             <small>{account.user.email}</small>
@@ -83,7 +83,7 @@ function App({ account, onAccountChange, onLogout }: {
             <h1>{activePage}</h1>
           </div>
           <div className="topbar-actions">
-            <div className="user-avatar" aria-label="Perfil do negócio">{initials}</div>
+            <Avatar name={account.user.full_name} src={account.user.photo_url} />
             <button type="button" className="logout-button" disabled={logoutBusy} onClick={() => void logout()}>{logoutBusy ? 'A sair...' : 'Sair'}</button>
           </div>
         </header>

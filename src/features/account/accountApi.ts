@@ -4,7 +4,7 @@ export type Account = {
     trial_ends_at: number; access_until: number; days_remaining: number
     monthly_price_cents: number; currency: string; billing_available: boolean
   }
-  user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null }
+  user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null; photo_url: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
     phone: string; brand_color: string; logo_url: string

@@ -62,7 +62,7 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
   const policy: BookingPaymentSettings = JSON.parse(org.booking_payment_settings)
   const calendar = limits()
   if (!match[2] && request.method === 'GET') {
-    const { results: staff } = await db.prepare('SELECT id,name FROM staff_members WHERE organization_id=? AND is_active=1 ORDER BY name,id').bind(org.id).all()
+    const { results: staff } = await db.prepare(`SELECT id,name,CASE WHEN photo_key != '' THEN '/api/staff-photos/' || photo_key || '.jpg' ELSE '' END AS photo_url FROM staff_members WHERE organization_id=? AND is_active=1 ORDER BY name,id`).bind(org.id).all()
     const { results } = active ? await db.prepare(`SELECT id, name, duration_minutes, price_cents
       FROM services WHERE organization_id = ? AND is_active = 1 ORDER BY name`).bind(org.id).all<PublicService>() : { results: [] }
     return Response.json({ business: { name: org.name, slug: org.slug, description: org.description,

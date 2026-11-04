@@ -93,6 +93,7 @@ test('staff migration retains existing sessions, recovery tokens and booking his
   await db.prepare("INSERT INTO services(id,organization_id,name,duration_minutes,price_cents) VALUES ('s','org','Serviço',30,1000)").run()
   await db.prepare("INSERT INTO bookings(id,organization_id,service_id,customer_name,start_at,end_at) VALUES ('b','org','s','Cliente antigo','2090-01-01T10:00:00','2090-01-01T10:30:00')").run()
   await applySql(db,await readFile('migrations/0010_staff.sql','utf8'))
+  await applySql(db,await readFile('migrations/0011_profile_photos.sql','utf8'))
   assert.equal((await db.prepare('PRAGMA foreign_key_check').all()).results.length,0)
   assert.equal((await db.prepare("SELECT staff_id FROM bookings WHERE id='b'").first()).staff_id,'staff:org')
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM password_change_tokens').first()).n,1)

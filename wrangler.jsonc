@@ -4,6 +4,7 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-10-19",
 	"send_email": [{ "name": "EMAIL" }],
+	"r2_buckets": [{ "binding": "PROFILE_PHOTOS", "bucket_name": "booking-saas-profile-photos" }],
 	"triggers": { "crons": ["*/5 * * * *"] },
 	"assets": {
 		"not_found_handling": "single-page-application",

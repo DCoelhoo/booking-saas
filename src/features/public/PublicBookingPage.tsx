@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import type { paymentQuote } from '../../../shared/bookingPayments'
 import './PublicBookingPage.css'
+import Avatar from '../account/Avatar'
 
 type Service = { id: string; name: string; duration_minutes: number; price_cents: number; payment: ReturnType<typeof paymentQuote> }
 type PageData = {
   business: { name: string; slug: string; description: string; contact_email: string; phone: string; logo_url: string; brand_color: string }
-  available: boolean; today: string; max_date: string; time_zone: string; services: Service[]; staff: {id:string;name:string}[]; change_hours: number
+  available: boolean; today: string; max_date: string; time_zone: string; services: Service[]; staff: {id:string;name:string;photo_url:string}[]; change_hours: number
 }
 type Slot = { start_time: string; end_time: string }
 type Receipt = { booking: { id: string; status: string; staff_name: string; start_at: string; end_at: string; service_name: string; total_cents: number; on_site_due_cents: number } }
@@ -131,7 +132,7 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
         </div> : !data.available ? <div className="public-empty"><h2>Marcações temporariamente indisponíveis</h2><p>Contacta o negócio para saberes mais.</p></div> : <>
           <ol className="public-steps" aria-label="Etapas da marcação">{['Colaborador', 'Serviço', 'Dia e hora', 'Confirmar'].map((label, i) => <li key={label} aria-current={stage === i ? 'step' : undefined}><span>{i + 1}</span>{label}</li>)}</ol>
           {error && <p className="public-error" role="alert">{error}</p>}
-          {stage === 0 && <><h2>Com quem queres marcar?</h2><p>Escolhe um colaborador do estabelecimento.</p><div className="public-services">{data.staff.map(m=><button type="button" className="public-service" key={m.id} onClick={()=>{setStaffId(m.id);setChoice(null);setStage(1);setError('')}}><strong>{m.name}</strong><span>Escolher →</span></button>)}</div>{data.staff.length===0&&<p>Não existem colaboradores disponíveis. Contacta o estabelecimento.</p>}</>}
+          {stage === 0 && <><h2>Com quem queres marcar?</h2><p>Escolhe um colaborador do estabelecimento.</p><div className="public-services">{data.staff.map(m=><button type="button" className="public-service" key={m.id} onClick={()=>{setStaffId(m.id);setChoice(null);setStage(1);setError('')}}><span className="public-staff-person"><Avatar name={m.name} src={m.photo_url} /><strong>{m.name}</strong></span><span>Escolher →</span></button>)}</div>{data.staff.length===0&&<p>Não existem colaboradores disponíveis. Contacta o estabelecimento.</p>}</>}
           {stage === 1 && <><button type="button" className="public-secondary" onClick={()=>setStage(0)}>Alterar colaborador</button><p>Com {data.staff.find(m=>m.id===staffId)?.name}</p><h2>O que vamos marcar?</h2><p>Começa por escolher um serviço.</p>
             <div className="public-services">{data.services.map((item) => <button type="button" key={item.id}
               className={`public-service ${serviceId === item.id ? 'is-selected' : ''}`} aria-pressed={serviceId === item.id}

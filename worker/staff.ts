@@ -8,7 +8,7 @@ export async function handleStaff(request: Request, env: EmailEnv, account: Acco
   if (url.pathname !== '/api/staff' && !match) return null
   const db = env.booking_saas_db, org = account.organization.id
   if (request.method === 'GET' && !match) {
-    const { results } = await db.prepare(`SELECT m.id,m.name,m.is_active,u.email, CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END AS has_access
+    const { results } = await db.prepare(`SELECT m.id,m.name,m.is_active,CASE WHEN m.photo_key != '' THEN '/api/staff-photos/' || m.photo_key || '.jpg' ELSE '' END AS photo_url,u.email, CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END AS has_access
       FROM staff_members m LEFT JOIN users u ON u.staff_id=m.id WHERE m.organization_id=? AND (?='owner' OR m.id=?) ORDER BY m.created_at,m.id`)
       .bind(org,account.user.role,account.user.staff_id).all()
     return Response.json({ staff: results, limit: 10 })
