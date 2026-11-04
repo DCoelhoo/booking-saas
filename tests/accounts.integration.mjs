@@ -9,11 +9,12 @@ import { Miniflare, convertV4MiniflareOptions } from 'miniflare'
 test('accounts, sessions, profiles and tenant isolation work in the Cloudflare runtime', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'booking-accounts-'))
   const options = convertV4MiniflareOptions({ modules: true, scriptPath: 'dist/worker/index.js',
-    compatibilityDate: '2026-10-19', d1Databases: { booking_saas_db: 'accounts-integration' } })
+    compatibilityDate: '2026-10-19', d1Databases: { booking_saas_db: 'accounts-integration' },
+    bindings: { EMAIL_MODE: 'preview', APP_URL: 'https://localhost' } })
   options.resourcePersistencePath = directory
   let runtime = new Miniflare(options)
   async function request(path, method = 'GET', body, cookie = '', headers = {}) {
-    return runtime.dispatchFetch(`https://booking.example/api/${path}`, { method,
+    return runtime.dispatchFetch(`https://localhost/api/${path}`, { method,
       headers: { Cookie: cookie, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
   }
@@ -22,7 +23,7 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     let db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql']) {
       const schema = await readFile(`migrations/${file}`, 'utf8')
       for (const statement of schema.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
     }
@@ -101,13 +102,19 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
     const otherSession = cookieOf(otherLogin)
     assert.equal((await request('auth/password', 'POST', { current_password: 'uma passe incorreta', new_password: 'outra frase muito segura' }, cookieA)).status, 400)
     const changed = await request('auth/password', 'POST', { current_password: credentials.password, new_password: 'outra frase muito segura' }, cookieA)
-    assert.equal(changed.status, 200)
+    assert.equal(changed.status, 202)
+    assert.equal((await request('auth/session', 'GET', undefined, cookieA)).status, 200)
+    const notification = await db.prepare("SELECT payload FROM email_outbox WHERE kind = 'password_request' AND organization_id = ?")
+      .bind(accountA.organization.id).first()
+    const token = JSON.parse(notification.payload).text.match(/change-password=([A-Za-z0-9_-]+)/)[1]
+    assert.equal((await request('auth/password/confirm', 'POST', { token, new_password: 'outra frase muito segura' })).status, 200)
     const beforeChange = cookieA
-    cookieA = cookieOf(changed)
     assert.equal((await request('auth/session', 'GET', undefined, beforeChange)).status, 401)
     assert.equal((await request('auth/session', 'GET', undefined, otherSession)).status, 401)
     assert.equal((await request('auth/login', 'POST', credentials)).status, 401)
-    assert.equal((await request('auth/login', 'POST', { email: credentials.email, password: 'outra frase muito segura' })).status, 200)
+    const newLogin = await request('auth/login', 'POST', { email: credentials.email, password: 'outra frase muito segura' })
+    assert.equal(newLogin.status, 200)
+    cookieA = cookieOf(newLogin)
     assert.equal((await request('auth/logout', 'POST', {}, cookieA)).status, 204)
     assert.equal((await request('services', 'GET', undefined, cookieA)).status, 401)
     await db.prepare('UPDATE sessions SET expires_at = 0 WHERE user_id = ?').bind(accountB.user.id).run()

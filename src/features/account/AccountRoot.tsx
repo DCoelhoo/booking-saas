@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import App from '../../App'
 import { accountRequest, currentAccount, type Account } from './accountApi'
 import './Account.css'
+import ConfirmPassword from './ConfirmPassword'
 
 export default function AccountRoot() {
   const [account, setAccount] = useState<Account | null>(null)
@@ -18,6 +19,7 @@ export default function AccountRoot() {
   const [businessName, setBusinessName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
+  const [passwordToken, setPasswordToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('change-password') || '')
 
   useEffect(() => {
     let cancelled = false
@@ -29,8 +31,10 @@ export default function AccountRoot() {
 
   useEffect(() => {
     const expire = () => { setAccount(null); setError('A sessão terminou. Inicia sessão novamente.'); setPassword(''); setConfirmation('') }
+    const followEmail = () => setPasswordToken(new URLSearchParams(window.location.hash.slice(1)).get('change-password') || '')
     window.addEventListener('session-expired', expire)
-    return () => window.removeEventListener('session-expired', expire)
+    window.addEventListener('hashchange', followEmail)
+    return () => { window.removeEventListener('session-expired', expire); window.removeEventListener('hashchange', followEmail) }
   }, [])
 
   const userId = account?.user.id
@@ -81,6 +85,9 @@ export default function AccountRoot() {
     setRegister(false)
   }
 
+  if (passwordToken) return <ConfirmPassword token={passwordToken} onDone={() => {
+    setPasswordToken(''); setAccount(null); setPassword(''); setConfirmation(''); setLoading(true); setRetry((n) => n + 1)
+  }} />
   if (loading) return <main className="account-shell"><p role="status">A verificar sessão...</p></main>
   if (sessionError) return <main className="account-shell"><p role="alert">{sessionError}</p>
     <button type="button" className="primary-button" onClick={() => { setLoading(true); setSessionError(''); setRetry((value) => value + 1) }}>Tentar novamente</button></main>

@@ -3,7 +3,7 @@ import { availabilityCondition, validDate } from './availability.ts'
 
 const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, s.name AS service_name`
 
-export async function handleBookings(request: Request, db: D1Database, organizationId: string): Promise<Response | null> {
+export async function handleBookings(request: Request, db: D1Database, organizationId: string, emailPreview = false): Promise<Response | null> {
   const url = new URL(request.url)
   const match = url.pathname.match(/^\/api\/bookings\/([^/]+)$/)
   if (url.pathname !== '/api/bookings' && !match) return null
@@ -49,15 +49,32 @@ export async function handleBookings(request: Request, db: D1Database, organizat
       if (!service) return Response.json({ error: 'O serviço não está disponível. Atualiza a lista de serviços.' }, { status: 400 })
       if (!service.available) return Response.json({ error: 'A marcação fica fora dos períodos de funcionamento ou coincide com um encerramento.' }, { status: 400 })
       // Availability and overlap are rechecked in the same statement as the insert.
-      const inserted = await db.prepare(`${candidate}
+      const insertBooking = db.prepare(`${candidate}
         INSERT INTO bookings (id, organization_id, service_id, customer_name, start_at, end_at)
         SELECT ?, c.organization_id, c.service_id, ?, c.start_at, c.end_at FROM candidate c
         WHERE ${allowed} AND NOT EXISTS (
           SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id
             AND julianday(b.start_at) < julianday(c.end_at)
             AND julianday(b.end_at) > julianday(c.start_at)
-        ) RETURNING id`).bind(startAt, startAt, service_id, organizationId, id, customer_name.trim()).first()
-      if (!inserted) return Response.json({ error: 'O horário ou o serviço deixou de estar disponível. Atualiza a agenda.' }, { status: 409 })
+        ) RETURNING id`).bind(startAt, startAt, service_id, organizationId, id, customer_name.trim())
+      const [inserted] = await db.batch([
+        insertBooking,
+        db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
+          SELECT ?, b.organization_id, 'booking_created', json_object(
+            'to', CASE WHEN o.contact_email != '' THEN o.contact_email ELSE u.email END,
+            'subject', 'Nova marcação — ' || o.name,
+            'text', 'Recebeste uma nova marcação.' || char(10) || char(10) ||
+              'Cliente: ' || b.customer_name || char(10) || 'Serviço: ' || s.name || char(10) ||
+              'Data: ' || substr(b.start_at, 1, 10) || char(10) ||
+              'Horário: ' || substr(b.start_at, 12, 5) || '–' || substr(b.end_at, 12, 5) || char(10) ||
+              'As horas correspondem ao horário local do negócio.'), ?
+          FROM bookings b JOIN organizations o ON o.id = b.organization_id
+          JOIN users u ON u.organization_id = b.organization_id
+          JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id
+          WHERE b.id = ? AND b.organization_id = ?`)
+          .bind(`booking-created:${id}`, emailPreview ? 'preview' : 'pending', id, organizationId),
+      ])
+      if (!inserted.results.length) return Response.json({ error: 'O horário ou o serviço deixou de estar disponível. Atualiza a agenda.' }, { status: 409 })
       const booking = await db.prepare(`SELECT ${columns} FROM bookings b
         JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id
         WHERE b.id = ? AND b.organization_id = ?`).bind(id, organizationId).first()

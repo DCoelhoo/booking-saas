@@ -7,6 +7,7 @@ Vite, Cloudflare Workers e D1.
 
 ```powershell
 npm install
+Copy-Item .dev.vars.example .dev.vars
 npx wrangler d1 migrations apply booking-saas-db --local
 npm run dev
 ```
@@ -23,6 +24,11 @@ do negócio, ver uma pré-visualização e alterar a palavra-passe.
 Em **Horários, pausas e encerramentos**, configura os períodos de cada dia da semana,
 as pausas e os dias de férias/encerramento. A agenda usa esses horários para validar
 as marcações. Alterações incompatíveis com marcações ainda por concluir são recusadas.
+
+Os emails de criação de conta, alteração de palavra-passe e novas marcações podem
+ser testados em **Definições → Emails locais — não enviados**. A alteração de
+palavra-passe é confirmada num link com validade de 30 minutos. Os envios reais
+dependem da configuração de um domínio remetente; ver [emails](docs/emails.md).
 
 Cada conta começa com um negócio independente. Os serviços e marcações antigos de
 `org-demo` mantêm-se na D1, separados das contas novas. O link escolhido fica

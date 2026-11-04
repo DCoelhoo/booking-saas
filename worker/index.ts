@@ -1,4 +1,5 @@
-import type { D1Database } from '@cloudflare/workers-types'
+import type { ExecutionContext } from '@cloudflare/workers-types'
+import { flushEmailOutbox, localPreview, previewEmails, type EmailEnv } from './email.ts'
 import { authenticate, checkMutation, handleAuth } from './auth.ts'
 import { updateProfile } from './profile.ts'
 import { subscriptionRequired } from './subscriptions.ts'
@@ -7,20 +8,19 @@ import { handleAvailability } from './availability.ts'
 import { handleBookings } from './bookings.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
-interface Env {
-  booking_saas_db: D1Database
-}
+type Env = EmailEnv
 
 async function handleRequest(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     if (url.pathname === '/api/health') return Response.json({ status: 'ok', application: 'booking-saas' })
     const invalidMutation = checkMutation(request)
     if (invalidMutation) return invalidMutation
-    const authResponse = await handleAuth(request, env.booking_saas_db)
+    const authResponse = await handleAuth(request, env.booking_saas_db, env)
     if (authResponse) return authResponse
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/email-previews' && request.method === 'GET') return previewEmails(request, env, organizationId)
     if (url.pathname === '/api/availability') {
       if (request.method !== 'GET' && !account.subscription.can_manage) return subscriptionRequired()
       return handleAvailability(request, env.booking_saas_db, organizationId)
@@ -37,7 +37,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (previewMatch && request.method === 'POST') {
       return previewDuration(request, env.booking_saas_db, previewMatch[1], organizationId)
     }
-    const bookingsResponse = await handleBookings(request, env.booking_saas_db, organizationId)
+    const bookingsResponse = await handleBookings(request, env.booking_saas_db, organizationId, localPreview(request, env))
     if (bookingsResponse) return bookingsResponse
 
     if (url.pathname === '/api/services' && request.method === 'GET') {
@@ -255,11 +255,13 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
       const response = await handleRequest(request, env)
       response.headers.set('Cache-Control', 'no-store')
       response.headers.set('X-Content-Type-Options', 'nosniff')
+      response.headers.set('Referrer-Policy', 'no-referrer')
+      ctx.waitUntil(flushEmailOutbox(env).catch(() => console.error('Não foi possível processar a fila de emails.')))
       return response
     } catch (error) {
       console.error('Erro no pedido:', error)
@@ -267,5 +269,8 @@ export default {
         status: 500, headers: { 'Cache-Control': 'no-store' },
       })
     }
+  },
+  async scheduled(_event: unknown, env: Env): Promise<void> {
+    await flushEmailOutbox(env)
   },
 }

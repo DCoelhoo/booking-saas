@@ -88,6 +88,9 @@
 .availability-closure { padding: 12px 0; border-bottom: 1px solid #e7eaf0; }
 .availability-settings ul { overflow-wrap: anywhere; }
 .availability-settings fieldset:disabled button { opacity: 0.55; cursor: not-allowed; }
+.email-previews summary { cursor: pointer; font-size: 18px; font-weight: 600; }
+.email-previews article { border-top: 1px solid #e7eaf0; margin-top: 16px; padding-top: 12px; }
+.email-previews pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.6; }
 @media (max-width: 600px) {
   .availability-day { flex-direction: column; }
   .availability-periods { width: 100%; }

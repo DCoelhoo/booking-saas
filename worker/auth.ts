@@ -2,6 +2,7 @@ import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import type { D1Database } from '@cloudflare/workers-types'
 import { subscriptionAccess, type SubscriptionFields } from './subscriptions.ts'
+import { appUrl, configuredEmail, emailStatement, localPreview, type EmailEnv } from './email.ts'
 
 export type Account = {
   subscription: ReturnType<typeof subscriptionAccess>
@@ -111,7 +112,7 @@ async function rateLimit(db: D1Database, key: string, limit: number): Promise<bo
   return row!.hits <= limit
 }
 
-export async function handleAuth(request: Request, db: D1Database): Promise<Response | null> {
+export async function handleAuth(request: Request, db: D1Database, env: EmailEnv): Promise<Response | null> {
   const path = new URL(request.url).pathname
   if (!path.startsWith('/api/auth/')) return null
   try {
@@ -164,6 +165,8 @@ export async function handleAuth(request: Request, db: D1Database): Promise<Resp
             db.prepare('INSERT INTO users (id, organization_id, email, full_name, password_hash) VALUES (?, ?, ?, ?, ?)')
               .bind(userId, orgId, email, full_name.trim(), hashed),
             session.statement,
+            emailStatement(db, orgId, 'welcome', { to: email, subject: 'Bem-vindo ao Booking SaaS',
+              text: `Olá, ${full_name.trim()}!\n\nA conta do negócio ${business_name.trim()} foi criada. Tens 14 dias de teste, sem cartão e sem cobranças automáticas.\n\nJá podes configurar os serviços e horários na aplicação.\n\nSe não criaste esta conta, ignora esta mensagem.` }, null, localPreview(request, env)),
           ])
         } catch (error) {
           if (String(error).includes('UNIQUE constraint')) {
@@ -195,20 +198,74 @@ export async function handleAuth(request: Request, db: D1Database): Promise<Resp
         return Response.json({ error: 'Demasiadas tentativas. Tenta novamente mais tarde.' }, { status: 429 })
       }
       const body = await jsonBody(request)
-      if (!body || !validPassword(body.current_password) || !validPassword(body.new_password)) {
-        return Response.json({ error: 'A palavra-passe deve ter entre 12 e 128 caracteres.' }, { status: 400 })
+      if (!body || !validPassword(body.current_password)) {
+        return Response.json({ error: 'Indica a tua palavra-passe atual.' }, { status: 400 })
       }
       const user = await db.prepare('SELECT password_hash FROM users WHERE id = ?').bind(account.user.id).first<{ password_hash: string }>()
       if (!user || !await verifyPassword(body.current_password, user.password_hash)) {
         return Response.json({ error: 'A palavra-passe atual está incorreta.' }, { status: 400 })
       }
-      const session = newSession(db, account.user.id)
+      if (!configuredEmail(request, env)) {
+        return Response.json({ error: 'O envio de emails ainda não está disponível. Tenta novamente mais tarde.' }, { status: 503 })
+      }
+      const token = randomBytes(32).toString('base64url')
+      const expiresAt = Date.now() + 30 * 60 * 1000
+      const link = `${appUrl(env)}/#change-password=${token}`
       await db.batch([
-        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(await passwordHash(body.new_password), account.user.id),
-        db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(account.user.id),
-        session.statement,
+        db.prepare(`INSERT INTO password_change_tokens (token_hash, user_id, password_hash_at_request, expires_at)
+          VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET token_hash = excluded.token_hash,
+          password_hash_at_request = excluded.password_hash_at_request, expires_at = excluded.expires_at,
+          created_at = CURRENT_TIMESTAMP`).bind(digest(token), account.user.id, user.password_hash, expiresAt),
+        db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
+          AND kind = 'password_request' AND status IN ('pending', 'preview')`).bind(account.organization.id),
+        emailStatement(db, account.organization.id, 'password_request', {
+          to: account.user.email, subject: 'Confirma a alteração da palavra-passe',
+          text: `Olá, ${account.user.full_name}.\n\nFoi pedida uma alteração da palavra-passe da tua conta. Abre este link para escolher uma nova palavra-passe:\n\n${link}\n\nO link é válido durante 30 minutos e só pode ser usado uma vez. A tua palavra-passe mantém-se até confirmares. Se não fizeste este pedido, ignora a mensagem.`,
+        }, expiresAt, localPreview(request, env)),
       ])
-      return Response.json({ success: true }, { headers: { 'Set-Cookie': cookie(request, session.token) } })
+      return Response.json({ message: localPreview(request, env)
+        ? 'Pedido criado. Abre a pré-visualização de emails locais para continuar.'
+        : 'Pedido registado. Consulta o teu email para escolher a nova palavra-passe.' }, { status: 202 })
+    }
+    if (path === '/api/auth/password/confirm' && request.method === 'POST') {
+      if (!await rateLimit(db, `confirm-ip:${request.headers.get('CF-Connecting-IP') || 'local'}`, 20)) {
+        return Response.json({ error: 'Demasiadas tentativas. Tenta novamente mais tarde.' }, { status: 429 })
+      }
+      const body = await jsonBody(request)
+      if (!body || typeof body.token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(body.token) || !validPassword(body.new_password)) {
+        return Response.json({ error: 'Link inválido ou palavra-passe fora dos 12 a 128 caracteres.' }, { status: 400 })
+      }
+      const tokenHash = digest(body.token)
+      const pending = await db.prepare(`SELECT t.user_id, u.organization_id, u.email FROM password_change_tokens t
+        JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? AND t.expires_at > ?
+          AND t.password_hash_at_request = u.password_hash`).bind(tokenHash, Date.now())
+        .first<{ user_id: string; organization_id: string; email: string }>()
+      if (!pending) return Response.json({ error: 'O link expirou ou já foi utilizado. Pede uma nova alteração nas Definições.' }, { status: 400 })
+      const hashed = await passwordHash(body.new_password)
+      const [updated] = await db.batch([
+        db.prepare(`UPDATE users SET password_hash = ? WHERE id = ? AND EXISTS (
+          SELECT 1 FROM password_change_tokens t WHERE t.user_id = users.id AND t.token_hash = ?
+            AND t.expires_at > ? AND t.password_hash_at_request = users.password_hash) RETURNING id`)
+          .bind(hashed, pending.user_id, tokenHash, Date.now()),
+        db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
+          SELECT ?, ?, 'password_changed', ?, ? WHERE changes() = 1`)
+          .bind(crypto.randomUUID(), pending.organization_id, JSON.stringify({ to: pending.email,
+            subject: 'A tua palavra-passe foi alterada',
+            text: 'A palavra-passe da tua conta Booking SaaS foi alterada. Todas as sessões anteriores foram terminadas. Se não reconheces esta alteração, contacta o suporte da aplicação.',
+          }), localPreview(request, env) ? 'preview' : 'pending'),
+        db.prepare(`DELETE FROM sessions WHERE user_id = ? AND EXISTS (
+          SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`).bind(pending.user_id, pending.user_id, hashed),
+        db.prepare(`DELETE FROM password_change_tokens WHERE user_id = ? AND EXISTS (
+          SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`).bind(pending.user_id, pending.user_id, hashed),
+        db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL
+          WHERE organization_id = ? AND kind = 'password_request' AND status IN ('pending', 'preview')
+            AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`)
+          .bind(pending.organization_id, pending.user_id, hashed),
+      ])
+      if (!updated.results.length) return Response.json({ error: 'O link expirou ou já foi utilizado.' }, { status: 400 })
+      return Response.json({ message: 'Palavra-passe alterada. Inicia sessão com a nova palavra-passe.' }, {
+        headers: { 'Set-Cookie': cookie(request, '', 0) },
+      })
     }
     return Response.json({ error: 'Endpoint não encontrado.' }, { status: 404 })
   } catch (error) {

@@ -10,8 +10,10 @@ Os dados de `org-demo` mantêm-se intactos, sem atribuição automática de prop
 - `POST /api/auth/login`: `email`, `password`.
 - `GET /api/auth/session`: conta e perfil do negócio, ou HTTP 401.
 - `POST /api/auth/logout`: invalida a sessão e elimina o cookie.
-- `POST /api/auth/password`: `current_password`, `new_password`; invalida todas as
-  sessões anteriores e emite uma nova para o dispositivo atual.
+- `POST /api/auth/password`: `current_password`; envia um link de confirmação por
+  email e devolve HTTP 202, mantendo a palavra-passe atual.
+- `POST /api/auth/password/confirm`: `token`, `new_password`; consome o link e
+  invalida todas as sessões. O utilizador volta a iniciar sessão.
 - `PATCH /api/profile`: `full_name`, `name`, `slug`, `description`, `contact_email`,
   `phone`, `brand_color`, `logo_url`.
 
@@ -41,6 +43,9 @@ Logótipos usam um URL HTTPS existente; upload para R2 fica para a integração 
 O email de acesso não é editável. Verificação de email, recuperação de palavra-passe,
 convites de equipa e autenticação de dois fatores ainda não estão implementados.
 Não existe publicação automática nesta etapa.
+O pedido de alteração de palavra-passe exige acesso ao email da conta. A recuperação
+sem a palavra-passe atual ainda não está implementada. Consulta [emails](emails.md)
+para configurar envios ou a pré-visualização local.
 
 ## Testar
 

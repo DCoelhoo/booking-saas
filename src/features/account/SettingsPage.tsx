@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { accountRequest, type Account } from './accountApi'
 import AvailabilitySettings from './AvailabilitySettings'
+import EmailPreviews from './EmailPreviews'
 
 export default function SettingsPage({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [profile, setProfile] = useState({ ...account.organization, full_name: account.user.full_name })
@@ -8,8 +9,6 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmation, setConfirmation] = useState('')
   const canManage = account.subscription.can_manage
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -30,12 +29,11 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
     event.preventDefault()
     if (busy) return
     setError(''); setMessage('')
-    if (newPassword !== confirmation) { setError('As palavras-passe não coincidem.'); return }
     setBusy(true)
     try {
-      await accountRequest('auth/password', 'POST', { current_password: currentPassword, new_password: newPassword })
-      setCurrentPassword(''); setNewPassword(''); setConfirmation('')
-      setMessage('Palavra-passe alterada. As outras sessões foram terminadas.')
+      const result = await accountRequest<{ message: string }>('auth/password', 'POST', { current_password: currentPassword })
+      setCurrentPassword('')
+      setMessage(result.message)
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível alterar a palavra-passe.') }
     finally { setBusy(false) }
   }
@@ -87,6 +85,7 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
           <textarea id="profile-description" value={profile.description} onChange={(e) => field('description', e.target.value)} maxLength={1000} rows={4} />
           <label htmlFor="profile-contact-email">Email de contacto do negócio</label>
           <input id="profile-contact-email" type="email" value={profile.contact_email} onChange={(e) => field('contact_email', e.target.value)} maxLength={254} />
+          <small>Recebe os avisos de novas marcações. Se estiver vazio, usamos o email de acesso.</small>
           <label htmlFor="profile-phone">Telefone</label>
           <input id="profile-phone" type="tel" value={profile.phone} onChange={(e) => field('phone', e.target.value)} maxLength={40} />
           <label htmlFor="profile-color">Cor principal</label>
@@ -112,15 +111,13 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
     {message && <p role="status">{message}</p>}
     <form className="account-form panel password-form" onSubmit={changePassword}>
       <h2>Alterar palavra-passe</h2>
+      <p>Enviamos um link para {account.user.email}. O link é válido por 30 minutos. A palavra-passe só muda depois de confirmares no email.</p>
       <fieldset disabled={busy}>
         <label htmlFor="password-current">Palavra-passe atual</label>
         <input id="password-current" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} minLength={12} maxLength={128} required />
-        <label htmlFor="password-new">Nova palavra-passe</label>
-        <input id="password-new" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={12} maxLength={128} required />
-        <label htmlFor="password-confirm">Confirmar nova palavra-passe</label>
-        <input id="password-confirm" type="password" autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} minLength={12} maxLength={128} required />
-        <button type="submit" className="secondary-button">{busy ? 'A processar...' : 'Alterar palavra-passe'}</button>
+        <button type="submit" className="secondary-button">{busy ? 'A processar...' : 'Enviar link de alteração'}</button>
       </fieldset>
     </form>
+    <EmailPreviews />
   </div>
 }

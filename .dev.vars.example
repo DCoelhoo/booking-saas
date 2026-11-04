@@ -1,0 +1,7 @@
+# Local only: no real messages are sent. Copy this file to .dev.vars.
+EMAIL_MODE=preview
+APP_URL=http://localhost:5173
+
+# For real sending, verify a domain in Cloudflare Email Service and configure
+# EMAIL_MODE=live, APP_URL=https://your-app-domain and EMAIL_FROM in production.
+# EMAIL_FROM=Booking SaaS <notificacoes@your-domain.pt>
