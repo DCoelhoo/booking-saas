@@ -47,7 +47,7 @@ privado no email para cancelar ou reagendar. O prazo inicial é de 24 horas e po
 ser alterado em Definições. Ver [gestão de marcações](docs/booking-lifecycle.md).
 
 Logótipos podem ser configurados através de um endereço HTTPS existente.
-Em **Colaboradores**, convida até 10 perfis por estabelecimento, incluindo o
+Em **Colaboradores**, convida até 5 perfis por estabelecimento, incluindo o
 perfil inicial. Cada colaborador tem acesso apenas à sua agenda. Os clientes
 escolhem o colaborador na página pública antes de reservar. Ver [equipa](docs/staff.md).
 Em **Pré-visualização**, o dono pode explorar a página pública em formato de

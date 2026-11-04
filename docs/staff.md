@@ -1,6 +1,6 @@
 # Colaboradores e agendas individuais
 
-Cada estabelecimento tem até 10 perfis, incluindo o perfil inicial associado ao
+Cada estabelecimento tem até 5 perfis, incluindo o perfil inicial associado ao
 dono. Perfis inativos também contam para o limite; são mantidos para preservar o
 histórico. O limite é revalidado na instrução de criação, incluindo pedidos
 simultâneos. Os serviços, preços, horários e encerramentos são partilhados nesta

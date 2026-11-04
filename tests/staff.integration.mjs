@@ -9,7 +9,7 @@ import { authenticateDemo,demoCookie } from './account-fixture.mjs'
 import { applySql } from './apply-sql.mjs'
 import { businessNow } from '../worker/businessTime.ts'
 
-test('staff invitations, account isolation, parallel agendas and the ten-member limit are enforced',async()=>{
+test('staff invitations, account isolation, parallel agendas and the five-member limit are enforced',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'staff-integration-'))
  const options=convertV4MiniflareOptions({modules:true,scriptPath:'dist/worker/index.js',compatibilityDate:'2026-10-19',d1Databases:{booking_saas_db:'staff'},bindings:{EMAIL_MODE:'preview',APP_URL:'http://localhost'}})
  options.resourcePersistencePath=dir
@@ -69,10 +69,10 @@ test('staff invitations, account isolation, parallel agendas and the ten-member 
   assert.equal((await req(`staff/${ana}`,'PATCH',{name:'Ana',is_active:1})).status,200)
   assert.equal((await req('auth/session','GET',undefined,cookie)).status,401,'old sessions stay revoked after reactivation')
   // Capacity includes inactive profiles and the initial owner profile. Concurrent creation cannot exceed it.
-  for(let i=0;i<7;i++) assert.equal((await req('staff','POST',{name:`Pessoa ${i}`,email:`person-${i}@example.test`})).status,201)
+  for(let i=0;i<2;i++) assert.equal((await req('staff','POST',{name:`Pessoa ${i}`,email:`person-${i}@example.test`})).status,201)
   const capacity=await Promise.all([req('staff','POST',{name:'Final A',email:'a@example.test'}),req('staff','POST',{name:'Final B',email:'b@example.test'})])
   assert.deepEqual(capacity.map(r=>r.status).sort(),[201,409])
-  assert.equal((await(await req('staff')).json()).staff.length,10)
+  assert.equal((await(await req('staff')).json()).staff.length,5)
   assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM email_outbox WHERE kind='booking_created'").first()).n,3,'owner notifications are not duplicated per staff user')
   assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM email_outbox WHERE kind='booking_assigned'").first()).n,2)
  }finally{await runtime.dispose();await rm(dir,{recursive:true,force:true})}

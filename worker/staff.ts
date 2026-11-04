@@ -37,7 +37,7 @@ export async function handleStaff(request: Request, env: EmailEnv, account: Acco
   const id=match?.[1] || crypto.randomUUID(), token=randomBytes(32).toString('base64url'), hash=createHash('sha256').update(token).digest('hex'), expires=Date.now()+7*86400000
   const member=match ? await db.prepare('SELECT id FROM staff_members WHERE id=? AND organization_id=? AND is_active=1').bind(id,org).first() : null
   if (match && !member) return Response.json({ error: 'Colaborador não encontrado ou inativo.' }, { status:404 })
-  const insert = db.prepare(`INSERT INTO staff_members(id,organization_id,name) SELECT ?,?,? WHERE (SELECT COUNT(*) FROM staff_members WHERE organization_id=?)<10 RETURNING id`)
+  const insert = db.prepare(`INSERT INTO staff_members(id,organization_id,name) SELECT ?,?,? WHERE (SELECT COUNT(*) FROM staff_members WHERE organization_id=?)<5 RETURNING id`)
     .bind(id,org,typeof body.name === 'string' ? body.name.trim() : '',org)
   try {
     const results=await db.batch([
@@ -48,7 +48,7 @@ export async function handleStaff(request: Request, env: EmailEnv, account: Acco
       db.prepare(`INSERT INTO email_outbox(id,organization_id,kind,payload,status,expires_at) SELECT ?,?,'staff_invitation',?,?,? WHERE EXISTS(SELECT 1 FROM staff_invitations WHERE staff_id=? AND token_hash=?)`)
         .bind(crypto.randomUUID(),org,JSON.stringify({ to:email,subject:`Convite para ${account.organization.name}`,text:`Foste convidado para gerir a tua agenda em ${account.organization.name}.\n\n${appUrl(env)}/#staff-invitation=${token}\n\nEscolhe a tua palavra-passe. O convite é válido por 7 dias e só pode ser utilizado uma vez.` }),localPreview(request,env)?'preview':'pending',expires,id,hash),
     ])
-    if (!(match ? results[0] : results[1]).results.length) return Response.json({ error: 'Limite de 10 colaboradores atingido ou colaborador já tem acesso.' }, { status:409 })
+    if (!(match ? results[0] : results[1]).results.length) return Response.json({ error: 'Limite de 5 colaboradores atingido ou colaborador já tem acesso.' }, { status:409 })
     return Response.json({ id, message:'Convite preparado. O colaborador deve aceitar o link recebido por email.' },{status:match?200:201})
   } catch { return Response.json({ error:'Não foi possível criar o convite. Verifica se o email já tem um convite pendente.' },{status:409}) }
 }
