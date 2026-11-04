@@ -16,6 +16,6 @@ const publicSlug = window.location.pathname.replace(/^\/|\/$/g, '')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {publicSlug === 'conta' ? <AccountRoot /> : publicSlug === 'reserva/gerir' ? <ManageBookingPage /> : publicSlug ? <PublicBookingPage slug={publicSlug} /> : <LandingPage />}
+    {publicSlug === 'conta' ? <AccountRoot /> : publicSlug === 'reserva/gerir' ? <ManageBookingPage /> : publicSlug ? <PublicBookingPage slug={publicSlug} preview={new URLSearchParams(window.location.search).get('preview')==='1'} /> : <LandingPage />}
   </StrictMode>,
 )

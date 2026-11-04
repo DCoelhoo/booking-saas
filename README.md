@@ -50,6 +50,13 @@ Logótipos podem ser configurados através de um endereço HTTPS existente.
 Em **Colaboradores**, convida até 10 perfis por estabelecimento, incluindo o
 perfil inicial. Cada colaborador tem acesso apenas à sua agenda. Os clientes
 escolhem o colaborador na página pública antes de reservar. Ver [equipa](docs/staff.md).
+Em **Pré-visualização**, o dono pode explorar a página pública em formato de
+telemóvel (390 px) ou computador (1280 px). A tab substitui a antiga área Clientes.
+Usa os dados reais guardados, com envio de reservas desativado. Atualiza ao abrir
+a tab, ao regressar à tab do browser e quando são guardadas alterações noutra janela do
+mesmo browser e endereço. Também permite atualizar manualmente ou abrir a página
+pública. Não mostra alterações ainda por guardar; uma atualização reinicia o
+percurso da reserva dentro da pré-visualização, mantendo o formato escolhido.
 As faturas da mensalidade têm uma página própria em **Faturas**; os documentos
 reais continuam pendentes da integração de cobrança e faturação do SaaS.
 Em **Definições → A tua fotografia**, donos e colaboradores podem enviar ou remover

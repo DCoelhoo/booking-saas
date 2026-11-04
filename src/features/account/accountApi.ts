@@ -1,3 +1,4 @@
+import { notifyPublicPageUpdate } from '../public/previewUpdates'
 export type Account = {
   subscription: {
     status: 'trialing' | 'active' | 'expired'; can_manage: boolean
@@ -15,7 +16,7 @@ export async function secureFetch(input: RequestInfo | URL, init?: RequestInit):
   const response = await fetch(input, { ...init, credentials: 'same-origin' })
   if (response.status === 401) window.dispatchEvent(new Event('session-expired'))
   if (response.status === 402) window.dispatchEvent(new Event('subscription-expired'))
-  if (response.ok && init?.method && !['GET', 'HEAD'].includes(init.method)) window.dispatchEvent(new Event('email-preview-updated'))
+  if (response.ok && init?.method && !['GET', 'HEAD'].includes(init.method)) { window.dispatchEvent(new Event('email-preview-updated')); notifyPublicPageUpdate() }
   return response
 }
 
@@ -32,7 +33,7 @@ export async function accountRequest<T>(path: string, method = 'GET', body?: unk
     }
     throw new Error(data?.error || 'Não foi possível concluir o pedido.')
   }
-  if (!['GET', 'HEAD'].includes(method)) window.dispatchEvent(new Event('email-preview-updated'))
+  if (!['GET', 'HEAD'].includes(method)) { window.dispatchEvent(new Event('email-preview-updated')); notifyPublicPageUpdate() }
   return response.status === 204 ? undefined as T : response.json()
 }
 

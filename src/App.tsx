@@ -9,13 +9,14 @@ import SubscriptionBanner from './features/account/SubscriptionBanner'
 import InvoicesPage from './features/account/InvoicesPage'
 import StaffPage from './features/account/StaffPage'
 import Avatar from './features/account/Avatar'
+import PagePreview from './features/account/PagePreview'
 import type { Account } from './features/account/accountApi'
 
 type Page =
   | 'Dashboard'
   | 'Marcações'
   | 'Serviços'
-  | 'Clientes'
+  | 'Pré-visualização'
   | 'Definições'
   | 'Faturas'
   | 'Colaboradores'
@@ -24,7 +25,7 @@ const navigation: { page: Page; label: string; icon: string }[] = [
   { page: 'Dashboard', label: 'Início', icon: '⌂' },
   { page: 'Marcações', label: 'Agenda', icon: '▦' },
   { page: 'Serviços', label: 'Serviços', icon: '◇' },
-  { page: 'Clientes', label: 'Clientes', icon: '♙' },
+  { page: 'Pré-visualização', label: 'Página', icon: '◫' },
   { page: 'Colaboradores', label: 'Equipa', icon: '♧' },
   { page: 'Faturas', label: 'Faturas', icon: '▤' },
   { page: 'Definições', label: 'Mais', icon: '☰' },
@@ -38,6 +39,7 @@ function App({ account, onAccountChange, onLogout }: {
   const [activePage, setActivePage] = useState<Page>(isOwner ? 'Dashboard':'Marcações')
   const [logoutBusy, setLogoutBusy] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  function navigate(page: Page) { setActivePage(page); window.scrollTo(0,0) }
   async function logout() {
     if (logoutBusy) return
     setLogoutBusy(true); setLogoutError('')
@@ -59,7 +61,7 @@ function App({ account, onAccountChange, onLogout }: {
               key={page}
               type="button"
               className={`nav-item ${activePage === page ? 'active' : ''}`}
-              onClick={() => setActivePage(page)}
+              onClick={() => navigate(page)}
               aria-current={activePage === page ? 'page' : undefined}
             >
               {page}
@@ -89,7 +91,7 @@ function App({ account, onAccountChange, onLogout }: {
         </header>
 
         {logoutError && <p className="booking-error" role="alert">{logoutError}</p>}
-        {isOwner && <SubscriptionBanner subscription={account.subscription} onViewPlan={() => setActivePage('Definições')} />}
+        {isOwner && <SubscriptionBanner subscription={account.subscription} onViewPlan={() => navigate('Definições')} />}
         {activePage === 'Dashboard' ? (
           <DashboardPage name={account.user.full_name} />
         ) : activePage === 'Serviços' ? (
@@ -98,6 +100,8 @@ function App({ account, onAccountChange, onLogout }: {
           <BookingsPage canManage={account.subscription.can_manage} ownAgenda={!isOwner} />
         ) : activePage === 'Definições' ? (
           <SettingsPage account={account} onChange={onAccountChange} />
+        ) : activePage === 'Pré-visualização' && isOwner ? (
+          <PagePreview slug={account.organization.slug} onEdit={()=>navigate('Definições')} />
         ) : activePage === 'Faturas' && isOwner ? (
           <InvoicesPage />
         ) : activePage === 'Colaboradores' && isOwner ? (
@@ -116,7 +120,7 @@ function App({ account, onAccountChange, onLogout }: {
             key={page}
             type="button"
             className={`bottom-nav-item ${activePage === page ? 'active' : ''}`}
-            onClick={() => setActivePage(page)}
+            onClick={() => navigate(page)}
             aria-current={activePage === page ? 'page' : undefined}
           >
             <span className="bottom-nav-icon" aria-hidden="true">{icon}</span>

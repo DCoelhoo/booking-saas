@@ -20,7 +20,7 @@ function brandInk(color: string) {
   return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722 > 0.179 ? '#000000' : '#ffffff'
 }
 
-export default function PublicBookingPage({ slug }: { slug: string }) {
+export default function PublicBookingPage({ slug, preview = false }: { slug: string; preview?:boolean }) {
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -81,6 +81,7 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
   const slots = service && slotData?.key === `${staffId}:${service.id}:${date}` && !slotsLoading && !slotsError ? slotData.slots : []
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (preview) { setError('Esta é uma pré-visualização. Abre a página pública para fazer uma marcação.'); return }
     if (busy || !service || !choice || !slots.some((slot) => slot.start_time === choice.start_time)) return
     setBusy(true); setError('')
     const input = { customer_name: name.trim(), customer_email: email.trim(), customer_phone: phone.trim(),
@@ -103,11 +104,11 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
 
   if (loading) return <main className="public-loading"><p role="status">A carregar marcações...</p></main>
   if (loadError || !data) return <main className="public-loading"><h1>Não foi possível abrir a página</h1>
-    <p role="alert">{loadError}</p><button type="button" onClick={() => setRefresh((n) => n + 1)}>Tentar novamente</button><a href="/conta">Área do negócio</a></main>
+    <p role="alert">{loadError}</p><button type="button" onClick={() => setRefresh((n) => n + 1)}>Tentar novamente</button>{!preview && <a href="/conta">Área do negócio</a>}</main>
   const business = data.business
   const initials = business.name.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()
   return <div className="public-booking" style={{ '--public-brand': business.brand_color, '--public-ink': brandInk(business.brand_color) } as CSSProperties}>
-    <header className="public-header"><a href={`/${business.slug}`} aria-label={business.name}>
+    <header className="public-header"><a href={`/${business.slug}${preview?'?preview=1':''}`} aria-label={business.name}>
       <span className="public-mark">{initials}</span><strong>{business.name}</strong></a><span>Marcações online</span></header>
     <main className="public-layout">
       <aside className="public-business">
@@ -117,8 +118,8 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
         <p className="public-description">{business.description || 'Escolhe o serviço e o horário que te dão mais jeito. Nós tratamos do resto.'}</p>
         <div className="public-facts"><p><strong>À tua medida</strong><span>Escolhe entre os horários disponíveis.</span></p><p><strong>Sem criar conta</strong><span>Precisamos apenas dos teus contactos.</span></p></div>
         {(business.contact_email || business.phone) && <section className="public-contact"><h2>Precisas de ajuda?</h2>
-          {business.contact_email && <a href={`mailto:${business.contact_email}`}>{business.contact_email}</a>}
-          {business.phone && <a href={`tel:${business.phone.replace(/[^+\d]/g, '')}`}>{business.phone}</a>}
+          {business.contact_email && <a href={`mailto:${business.contact_email}`} onClick={preview?(event)=>event.preventDefault():undefined}>{business.contact_email}</a>}
+          {business.phone && <a href={`tel:${business.phone.replace(/[^+\d]/g, '')}`} onClick={preview?(event)=>event.preventDefault():undefined}>{business.phone}</a>}
         </section>}
       </aside>
       <section className="public-reservation" aria-label="Reservar uma marcação">
@@ -168,12 +169,12 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
               <div className="public-trap" aria-hidden="true"><label>Website<input value={website} onChange={(e) => setWebsite(e.target.value)} autoComplete="off" tabIndex={-1} /></label></div>
               <p className="public-data-note">Os teus contactos serão usados para gerir esta marcação.</p>
               <div className="public-actions"><button type="button" className="public-secondary" onClick={() => setStage(2)}>Voltar</button>
-                <button type="submit" className="public-primary">{busy ? 'A confirmar...' : 'Confirmar marcação'}</button></div>
+                <button type="submit" className="public-primary" disabled={preview}>{preview ? 'Pré-visualização: envio desativado' : busy ? 'A confirmar...' : 'Confirmar marcação'}</button></div>
             </fieldset></form>
           </>}
         </>}
       </section>
     </main>
-    <footer className="public-footer"><span>Marcações com Booking SaaS</span><a href="/conta">Área do negócio</a></footer>
+    <footer className="public-footer"><span>Marcações com Booking SaaS</span>{!preview && <a href="/conta">Área do negócio</a>}</footer>
   </div>
 }
