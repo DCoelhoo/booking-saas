@@ -3,6 +3,7 @@ import { authenticate, checkMutation, handleAuth } from './auth.ts'
 import { updateProfile } from './profile.ts'
 import { subscriptionRequired } from './subscriptions.ts'
 import { exportData } from './export.ts'
+import { handleAvailability } from './availability.ts'
 import { handleBookings } from './bookings.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
@@ -20,6 +21,10 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/availability') {
+      if (request.method !== 'GET' && !account.subscription.can_manage) return subscriptionRequired()
+      return handleAvailability(request, env.booking_saas_db, organizationId)
+    }
     if (url.pathname === '/api/subscription' && request.method === 'GET') return Response.json(account.subscription)
     if (url.pathname === '/api/export' && request.method === 'GET') return exportData(env.booking_saas_db, account)
     const managesServices = url.pathname.startsWith('/api/services') && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)

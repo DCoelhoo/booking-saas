@@ -20,6 +20,9 @@ de marcações existentes, a gestão da conta e a exportação JSON mantêm-se d
 
 Em **Definições** (ou **Mais**, no telemóvel), podes editar o perfil e a identidade
 do negócio, ver uma pré-visualização e alterar a palavra-passe.
+Em **Horários, pausas e encerramentos**, configura os períodos de cada dia da semana,
+as pausas e os dias de férias/encerramento. A agenda usa esses horários para validar
+as marcações. Alterações incompatíveis com marcações ainda por concluir são recusadas.
 
 Cada conta começa com um negócio independente. Os serviços e marcações antigos de
 `org-demo` mantêm-se na D1, separados das contas novas. O link escolhido fica

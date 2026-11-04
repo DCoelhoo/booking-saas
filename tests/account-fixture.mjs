@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 export const demoCookie = `booking_session=${'a'.repeat(43)}`
 
 export async function authenticateDemo(db) {
-  for (const file of ['0002_accounts.sql', '0003_subscription_trials.sql']) {
+  for (const file of ['0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql']) {
     const migration = await readFile(`migrations/${file}`, 'utf8')
     for (const statement of migration.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
   }

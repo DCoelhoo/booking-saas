@@ -1,12 +1,7 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import { availabilityCondition, validDate } from './availability.ts'
 
 const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, s.name AS service_name`
-
-function validDate(value: unknown): value is string {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    Number.isFinite(Date.parse(`${value}T00:00:00Z`)) &&
-    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
-}
 
 export async function handleBookings(request: Request, db: D1Database, organizationId: string): Promise<Response | null> {
   const url = new URL(request.url)
@@ -40,31 +35,28 @@ export async function handleBookings(request: Request, db: D1Database, organizat
           typeof start_time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start_time)) {
         return Response.json({ error: 'Nome, serviço, data ou hora inválidos.' }, { status: 400 })
       }
-      const service = await db.prepare(`SELECT duration_minutes FROM services
-        WHERE id = ? AND organization_id = ? AND is_active = 1`).bind(service_id, organizationId)
-        .first<{ duration_minutes: number }>()
-      if (!service) return Response.json({ error: 'O serviço não está disponível. Atualiza a lista de serviços.' }, { status: 400 })
-      const [hours, minutes] = start_time.split(':').map(Number)
-      if (hours * 60 + minutes < 540 || hours * 60 + minutes + service.duration_minutes > 1080) {
-        return Response.json({ error: 'A marcação deve estar entre as 09:00 e as 18:00.' }, { status: 400 })
-      }
       const id = crypto.randomUUID()
       const startAt = `${date}T${start_time}:00`
-      // A single statement checks availability and inserts, preventing concurrent overlaps.
-      const inserted = await db.prepare(`
-        INSERT INTO bookings (id, organization_id, service_id, customer_name, start_at, end_at)
-        SELECT ?, s.organization_id, s.id, ?, ?, strftime('%Y-%m-%dT%H:%M:%S', ?, '+' || s.duration_minutes || ' minutes')
-        FROM services s
+      const candidate = `WITH candidate AS (
+        SELECT s.id AS service_id, s.organization_id, s.duration_minutes, o.availability,
+          ? AS start_at, strftime('%Y-%m-%dT%H:%M:%S', ?, '+' || s.duration_minutes || ' minutes') AS end_at
+        FROM services s JOIN organizations o ON o.id = s.organization_id
         WHERE s.id = ? AND s.organization_id = ? AND s.is_active = 1
-          AND s.duration_minutes <= ?
-          AND NOT EXISTS (
-            SELECT 1 FROM bookings b WHERE b.organization_id = s.organization_id
-              AND julianday(b.start_at) < julianday(?, '+' || s.duration_minutes || ' minutes')
-              AND julianday(b.end_at) > julianday(?)
-          )
-        RETURNING id
-      `).bind(id, customer_name.trim(), startAt, startAt, service_id, organizationId,
-        1080 - (hours * 60 + minutes), startAt, startAt).first()
+      )`
+      const allowed = availabilityCondition('c.availability', 'c.start_at', 'c.end_at')
+      const service = await db.prepare(`${candidate} SELECT ${allowed} AS available FROM candidate c`)
+        .bind(startAt, startAt, service_id, organizationId).first<{ available: number }>()
+      if (!service) return Response.json({ error: 'O serviço não está disponível. Atualiza a lista de serviços.' }, { status: 400 })
+      if (!service.available) return Response.json({ error: 'A marcação fica fora dos períodos de funcionamento ou coincide com um encerramento.' }, { status: 400 })
+      // Availability and overlap are rechecked in the same statement as the insert.
+      const inserted = await db.prepare(`${candidate}
+        INSERT INTO bookings (id, organization_id, service_id, customer_name, start_at, end_at)
+        SELECT ?, c.organization_id, c.service_id, ?, c.start_at, c.end_at FROM candidate c
+        WHERE ${allowed} AND NOT EXISTS (
+          SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id
+            AND julianday(b.start_at) < julianday(c.end_at)
+            AND julianday(b.end_at) > julianday(c.start_at)
+        ) RETURNING id`).bind(startAt, startAt, service_id, organizationId, id, customer_name.trim()).first()
       if (!inserted) return Response.json({ error: 'O horário ou o serviço deixou de estar disponível. Atualiza a agenda.' }, { status: 409 })
       const booking = await db.prepare(`SELECT ${columns} FROM bookings b
         JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id

@@ -1,17 +1,12 @@
 import type { D1Database } from '@cloudflare/workers-types'
 
 
-// Until organizations have configurable time zones, business time is Europe/Lisbon.
-export function businessNow(): string {
-  const parts = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
-  }).format(new Date())
-  return parts.replace(' ', 'T')
-}
+import { availabilityCondition } from './availability.ts'
+import { businessNow } from './businessTime.ts'
+export { businessNow } from './businessTime.ts'
 
 export const projection = `WITH projected AS (
-  SELECT id, service_id, customer_name, start_at, end_at,
+  SELECT id, organization_id, service_id, customer_name, start_at, end_at,
     CASE WHEN service_id = ? AND julianday(start_at) > julianday(?)
       THEN strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes')
       ELSE end_at END AS proposed_end,
@@ -22,7 +17,7 @@ export const projection = `WITH projected AS (
 export const conflictCondition = `EXISTS (
   SELECT 1 FROM projected a WHERE a.affected AND (
     a.proposed_end IS NULL OR substr(a.proposed_end, 1, 10) != substr(a.start_at, 1, 10)
-    OR substr(a.start_at, 12, 8) < '09:00:00' OR substr(a.proposed_end, 12, 8) > '18:00:00'
+    OR NOT ${availabilityCondition('(SELECT availability FROM organizations WHERE id = a.organization_id)', 'a.start_at', 'a.proposed_end')}
     OR EXISTS (SELECT 1 FROM projected b WHERE b.id != a.id
       AND julianday(a.start_at) < julianday(b.proposed_end)
       AND julianday(a.proposed_end) > julianday(b.start_at))

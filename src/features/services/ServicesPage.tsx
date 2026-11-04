@@ -226,7 +226,7 @@ export default function ServicesPage({ canManage }: { canManage: boolean }) {
             <div className="duration-preview" aria-live="polite">
               <strong>{preview.bookings.length} marcações futuras a atualizar</strong>
               {preview.has_conflicts ? (
-                <p className="booking-error" role="alert">A alteração provoca sobreposições ou ultrapassa o horário das 09:00 às 18:00.
+                <p className="booking-error" role="alert">A alteração provoca sobreposições ou fica fora dos horários configurados para o negócio.
                   Ajusta a duração ou desmarca a opção para guardar apenas o serviço.</p>
               ) : <p>Sem conflitos. Confirma abaixo para guardar o serviço e atualizar estas marcações.</p>}
               <ul>

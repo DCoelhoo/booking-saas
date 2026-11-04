@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { getServices, type Service } from '../services/servicesApi'
 import { getBookings, createBooking, deleteBooking, type Booking } from './bookingsApi'
+import { getAvailability, type Availability } from '../account/availabilityApi'
 import './BookingsPage.css'
 
 function localDate(date: Date): string {
@@ -9,7 +10,7 @@ function localDate(date: Date): string {
 
 export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()))
-  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[] } | null>(null)
+  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[]; availability: Availability } | null>(null)
   const [reload, setReload] = useState(0)
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -27,8 +28,8 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
       setLoading(true)
       setLoadError('')
       try {
-        const [bookings, services] = await Promise.all([getBookings(selectedDate), getServices()])
-        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1) })
+        const [bookings, services, availability] = await Promise.all([getBookings(selectedDate), getServices(), getAvailability()])
+        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1), availability })
       } catch {
         if (!cancelled) setLoadError('Não foi possível carregar a agenda. Tenta novamente.')
       } finally {
@@ -43,6 +44,9 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const services = ready ? data.services : []
   const bookings = ready ? data.bookings : []
   const selectedService = services.find((s) => s.id === serviceId)
+  const weekday = new Date(`${selectedDate}T12:00:00Z`).getUTCDay()
+  const closed = ready && data.availability.closures.some((period) => selectedDate >= period.start_date && selectedDate <= period.end_date)
+  const periods = ready && !closed ? data.availability.weekly[weekday] : []
   const [hours, minutes] = startTime.split(':').map(Number)
   const endMinutes = hours * 60 + minutes + (selectedService?.duration_minutes ?? 0)
   const endTime = Number.isFinite(endMinutes) && endMinutes < 1440
@@ -108,12 +112,12 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
     <section className="bookings-page">
       <div className="bookings-heading">
         <div><h2>Agenda</h2><p>Gere as marcações do teu negócio.</p></div>
-        <button type="button" className="primary-button" disabled={!canManage || !ready || busy || showForm || services.length === 0}
-          onClick={() => { setError(''); setNotice(''); setServiceId(services[0].id); setShowForm(true) }}>
+        <button type="button" className="primary-button" disabled={!canManage || !ready || busy || showForm || services.length === 0 || periods.length === 0}
+          onClick={() => { setError(''); setNotice(''); setServiceId(services[0].id); setStartTime(periods[0].start); setShowForm(true) }}>
           + Nova marcação
         </button>
       </div>
-      <p>Horário atual: 09:00–18:00. As horas correspondem ao horário local do negócio.</p>
+      {ready && <p>{periods.length ? `Horários deste dia: ${periods.map((period) => `${period.start}–${period.end}`).join(' · ')}.` : 'O negócio está encerrado neste dia.'} As horas correspondem ao horário local do negócio.</p>}
       <div className="date-navigation">
         <button type="button" aria-label="Dia anterior" disabled={busy} onClick={() => changeDay(-1)}>‹</button>
         <input type="date" aria-label="Selecionar data" value={selectedDate} disabled={busy}
@@ -134,11 +138,11 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
             {services.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.duration_minutes} min</option>)}
           </select>
           <label htmlFor="booking-time">Hora de início</label>
-          <input id="booking-time" type="time" min="09:00" max="18:00" step="60" value={startTime} onChange={(e) => setStartTime(e.target.value)} required disabled={busy} />
+          <input id="booking-time" type="time" min={periods[0]?.start} max={periods.at(-1)?.end} step="60" value={startTime} onChange={(e) => setStartTime(e.target.value)} required disabled={busy} />
           {selectedService && <p>Termina às <strong>{endTime}</strong></p>}
           <div className="booking-form-actions">
             <button type="button" className="secondary-button" disabled={busy} onClick={() => { setShowForm(false); setError('') }}>Cancelar</button>
-            <button type="submit" className="primary-button" disabled={!canManage || busy || !ready || !selectedService}>{busy ? 'A guardar...' : 'Guardar'}</button>
+            <button type="submit" className="primary-button" disabled={!canManage || busy || !ready || !selectedService || periods.length === 0}>{busy ? 'A guardar...' : 'Guardar'}</button>
           </div>
         </form>
       )}

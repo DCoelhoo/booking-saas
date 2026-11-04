@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { accountRequest, type Account } from './accountApi'
+import AvailabilitySettings from './AvailabilitySettings'
 
 export default function SettingsPage({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [profile, setProfile] = useState({ ...account.organization, full_name: account.user.full_name })
@@ -65,6 +66,7 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
       <p>Os pagamentos estarão disponíveis em breve. Não são efetuadas cobranças automáticas durante o teste.</p>
       <button type="button" className="secondary-button" disabled={busy} onClick={() => void exportAccount()}>Exportar os meus dados (JSON)</button>
     </section>
+    <AvailabilitySettings canManage={canManage} />
     <div className="settings-grid">
       <form className="account-form panel" onSubmit={save}>
         <h2>Conta e negócio</h2>
