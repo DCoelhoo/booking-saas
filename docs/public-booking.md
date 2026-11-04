@@ -5,7 +5,7 @@ Em Definições, a secção «A tua página de marcações» permite abrir e cop
 endereço guardado. Só são encontrados negócios associados a uma conta.
 
 A página usa o nome, descrição, logótipo, cor e contactos públicos configurados.
-O cliente não precisa de conta: escolhe um serviço ativo, data, horário e indica
+O cliente não precisa de conta: escolhe um colaborador, um serviço ativo, data, horário e indica
 nome, email e telefone opcional. Reservas são persistidas na mesma agenda do dono.
 
 ## Disponibilidade e pagamentos
@@ -13,7 +13,7 @@ nome, email e telefone opcional. Reservas são persistidas na mesma agenda do do
 Horários são apresentados em Europe/Lisbon, em intervalos de 15 minutos a partir
 do início de cada período de funcionamento. Só são oferecidos horários futuros
 nos próximos 90 dias que acomodem toda a duração do serviço. Pausas, férias,
-dias encerrados e marcações existentes são respeitados.
+dias encerrados e marcações existentes do colaborador são respeitados. Ver [equipa e acessos](staff.md).
 
 O backend revalida disponibilidade, sobreposições, serviço ativo, preço, duração,
 acesso do negócio e pagamento na mesma instrução que insere a marcação. Um

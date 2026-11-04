@@ -173,7 +173,9 @@ p {
   right: 0;
   z-index: 100;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(76px, 1fr);
+  overflow-x: auto;
   background: white;
   border-top: 1px solid #e7eaf0;
   padding: 8px 4px;

@@ -5,14 +5,17 @@ import { getAvailability, type Availability } from '../account/availabilityApi'
 import { getBookingPaymentSettings, type BookingPaymentSettings } from '../account/bookingPaymentApi'
 import { paymentQuote } from '../../../shared/bookingPayments'
 import './BookingsPage.css'
+import { getStaff, type Staff } from '../account/staffApi'
 
 function localDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-export default function BookingsPage({ canManage }: { canManage: boolean }) {
+export default function BookingsPage({ canManage, ownAgenda = false }: { canManage: boolean; ownAgenda?: boolean }) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()))
-  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[]; availability: Availability; paymentSettings: BookingPaymentSettings } | null>(null)
+  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[]; availability: Availability; paymentSettings: BookingPaymentSettings; staff: Staff[] } | null>(null)
+  const [staffFilter, setStaffFilter] = useState('')
+  const [bookingStaff, setBookingStaff] = useState('')
   const [reload, setReload] = useState(0)
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -30,8 +33,8 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
       setLoading(true)
       setLoadError('')
       try {
-        const [bookings, services, availability, paymentSettings] = await Promise.all([getBookings(selectedDate), getServices(), getAvailability(), getBookingPaymentSettings()])
-        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1), availability, paymentSettings })
+        const [bookings, services, availability, paymentSettings, staff] = await Promise.all([getBookings(selectedDate), getServices(), getAvailability(), getBookingPaymentSettings(), getStaff()])
+        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1), availability, paymentSettings, staff })
       } catch {
         if (!cancelled) setLoadError('Não foi possível carregar a agenda. Tenta novamente.')
       } finally {
@@ -44,7 +47,7 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
 
   const ready = !loading && !loadError && data?.date === selectedDate
   const services = ready ? data.services : []
-  const bookings = ready ? data.bookings : []
+  const bookings = ready ? data.bookings.filter(b=>!staffFilter || b.staff_id===staffFilter) : []
   const now = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(new Date()).replace(' ', 'T')
   const selectedService = services.find((s) => s.id === serviceId)
   const quote = selectedService && ready ? paymentQuote(selectedService.price_cents, data.paymentSettings) : null
@@ -82,7 +85,7 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
     }
     setBusy(true)
     try {
-      const booking = await createBooking({ customer_name: customer.trim(), service_id: serviceId, date: selectedDate, start_time: startTime })
+      const booking = await createBooking({ customer_name: customer.trim(), service_id: serviceId, date: selectedDate, start_time: startTime, staff_id: bookingStaff })
       setData((current) => current && ({ ...current, bookings: [...current.bookings, booking].sort((a, b) => a.start_at.localeCompare(b.start_at)) }))
       setCustomer('')
       setStartTime('09:00')
@@ -117,12 +120,13 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
   return (
     <section className="bookings-page">
       <div className="bookings-heading">
-        <div><h2>Agenda</h2><p>Gere as marcações do teu negócio.</p></div>
+        <div><h2>{ownAgenda ? 'A tua agenda' : 'Agenda'}</h2><p>{ownAgenda ? 'Consulta e gere as tuas marcações.' : 'Gere as marcações do teu negócio.'}</p></div>
         <button type="button" className="primary-button" disabled={!canManage || !ready || busy || showForm || services.length === 0 || periods.length === 0}
-          onClick={() => { setError(''); setNotice(''); setServiceId(services[0].id); setStartTime(periods[0].start); setShowForm(true) }}>
+          onClick={() => { setError(''); setNotice(''); setBookingStaff(staffFilter || data!.staff.find(m=>m.is_active)?.id || ''); setServiceId(services[0].id); setStartTime(periods[0].start); setShowForm(true) }}>
           + Nova marcação
         </button>
       </div>
+      {ready && !ownAgenda && <label className="account-form" htmlFor="agenda-staff-filter">Agenda do colaborador<select id="agenda-staff-filter" value={staffFilter} disabled={busy} onChange={e=>{setStaffFilter(e.target.value);setShowForm(false)}}><option value="">Todas as agendas</option>{data.staff.map(m=><option key={m.id} value={m.id}>{m.name}{m.is_active?'':' (inativo)'}</option>)}</select></label>}
       {ready && <p>{periods.length ? `Horários deste dia: ${periods.map((period) => `${period.start}–${period.end}`).join(' · ')}.` : 'O negócio está encerrado neste dia.'} As horas correspondem ao horário local do negócio.</p>}
       <div className="date-navigation">
         <button type="button" aria-label="Dia anterior" disabled={busy} onClick={() => changeDay(-1)}>‹</button>
@@ -135,7 +139,7 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
       {ready && services.length === 0 && <p>Cria ou reativa um serviço na página Serviços para adicionar marcações.</p>}
       {showForm && (
         <form className="booking-form" onSubmit={submit}>
-          <h2>Nova marcação</h2>
+          <h2>Nova marcação</h2><label htmlFor="booking-staff">Colaborador</label><select id="booking-staff" required disabled={busy} value={bookingStaff} onChange={e=>setBookingStaff(e.target.value)}><option value="">Seleciona um colaborador</option>{data?.staff.filter(m=>m.is_active).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>
           <label htmlFor="booking-customer">Nome do cliente</label>
           <input id="booking-customer" value={customer} onChange={(e) => setCustomer(e.target.value)} maxLength={100} required disabled={busy} />
           <label htmlFor="booking-service">Serviço</label>
@@ -162,7 +166,7 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
         {bookings.length === 0 && <div className="empty-agenda"><p>Não existem marcações neste dia.</p></div>}
         {bookings.map((booking) => <article className="agenda-card" key={booking.id}>
           <div className="agenda-time"><strong>{booking.start_at.slice(11, 16)}</strong><span>{booking.end_at.slice(11, 16)}</span></div>
-          <div className="agenda-details"><strong>{booking.customer_name}</strong><span>{booking.service_name}</span>
+          <div className="agenda-details"><strong>{booking.customer_name}</strong><span>{booking.service_name} · {booking.staff_name}</span>
             <span className={`booking-status booking-status-${booking.status}`}>{({ confirmed: 'Confirmada', completed: 'Concluída', canceled: 'Cancelada', no_show: 'Não compareceu' })[booking.status]}</span>
             {booking.customer_email && <a href={`mailto:${booking.customer_email}`}>{booking.customer_email}</a>}
             {booking.customer_phone && <a href={`tel:${booking.customer_phone.replace(/[^+\d]/g, '')}`}>{booking.customer_phone}</a>}

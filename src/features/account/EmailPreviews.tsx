@@ -46,6 +46,7 @@ export default function EmailPreviews() {
     {messages.map((message) => <article key={message.id}>
       <h3>{message.subject}</h3><p>Para: {message.to}</p>
       <pre>{message.text}</pre>
+      {message.kind === 'staff_invitation' && message.text.match(/https?:\/\/\S+/)?.[0] && <a href={message.text.match(/https?:\/\/\S+/)![0]} referrerPolicy="no-referrer">Abrir convite de colaborador</a>}
       {['password_request', 'password_reset_request'].includes(message.kind) && message.text.match(/https?:\/\/\S+/)?.[0] &&
         <a href={message.text.match(/https?:\/\/\S+/)![0]} referrerPolicy="no-referrer">{message.kind === 'password_reset_request' ? 'Abrir recuperação de acesso' : 'Abrir confirmação da palavra-passe'}</a>}
       {message.kind === 'booking_confirmation' && message.text.match(/https?:\/\/\S+/)?.[0] &&

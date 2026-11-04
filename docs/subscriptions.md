@@ -18,7 +18,7 @@ dados do negócio autenticado. Campos de subscrição não são editáveis pelo 
 Operações bloqueadas devolvem HTTP 402 com `code: SUBSCRIPTION_REQUIRED`.
 
 O botão de exportação JSON foi retirado das Definições; o endpoint autenticado
-mantém-se disponível. A área «Faturas da subscrição» refere-se exclusivamente à
+mantém-se disponível para o dono. A página própria «Faturas» refere-se exclusivamente à
 mensalidade do SaaS. A emissão de faturas dos serviços prestados aos clientes é
 responsabilidade de cada negócio e fica fora do âmbito da aplicação.
 

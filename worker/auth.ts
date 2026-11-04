@@ -6,7 +6,7 @@ import { appUrl, configuredEmail, emailStatement, localPreview, type EmailEnv } 
 
 export type Account = {
   subscription: ReturnType<typeof subscriptionAccess>
-  user: { id: string; email: string; full_name: string }
+  user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
     phone: string; brand_color: string; logo_url: string
@@ -69,7 +69,8 @@ function newSession(db: D1Database, userId: string) {
     .bind(digest(token), userId, Date.now() + sessionSeconds * 1000) }
 }
 export async function getAccount(db: D1Database, userId: string): Promise<Account | null> {
-  const user = await db.prepare('SELECT id, email, full_name, organization_id FROM users WHERE id = ?')
+  const user = await db.prepare(`SELECT id, email, full_name, organization_id, role, staff_id FROM users WHERE id = ?
+    AND (role = 'owner' OR EXISTS (SELECT 1 FROM staff_members m WHERE m.id = users.staff_id AND m.organization_id = users.organization_id AND m.is_active = 1))`)
     .bind(userId).first<Account['user'] & { organization_id: string }>()
   if (!user) return null
   const row = await db.prepare(`SELECT id, name, slug, description, contact_email, phone, brand_color, logo_url,
@@ -78,7 +79,7 @@ export async function getAccount(db: D1Database, userId: string): Promise<Accoun
   if (!row) return null
   const { trial_started_at, trial_ends_at, subscription_status, paid_until, ...organization } = row
   return {
-    user: { id: user.id, email: user.email, full_name: user.full_name }, organization,
+      user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, staff_id: user.staff_id }, organization,
     subscription: subscriptionAccess({ trial_started_at, trial_ends_at, subscription_status, paid_until }),
   }
 }
@@ -102,7 +103,7 @@ export function checkMutation(request: Request): Response | null {
   return null
 }
 
-async function rateLimit(db: D1Database, key: string, limit: number): Promise<boolean> {
+export async function rateLimit(db: D1Database, key: string, limit: number): Promise<boolean> {
   const now = Date.now()
   const row = await db.prepare(`INSERT INTO auth_rate_limits (key, hits, reset_at) VALUES (?, 1, ?)
     ON CONFLICT(key) DO UPDATE SET
@@ -116,6 +117,22 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
   const path = new URL(request.url).pathname
   if (!path.startsWith('/api/auth/')) return null
   try {
+    if (path === '/api/auth/invitation/accept' && request.method === 'POST') {
+      if (!await rateLimit(db, `invite-ip:${request.headers.get('CF-Connecting-IP') || 'local'}`, 20)) return Response.json({ error: 'Demasiadas tentativas.' }, { status: 429 })
+      const body = await jsonBody(request)
+      if (!body || typeof body.token !== 'string' || !/^[\w-]{43}$/.test(body.token) || !validPassword(body.new_password)) return Response.json({ error: 'Link ou palavra-passe inválidos.' }, { status: 400 })
+      const hashed = await passwordHash(body.new_password)
+      const id = crypto.randomUUID()
+      const [created] = await db.batch([
+        db.prepare(`INSERT INTO users(id,organization_id,email,full_name,password_hash,role,staff_id)
+          SELECT ?,m.organization_id,i.email,m.name,?,'staff',m.id FROM staff_invitations i JOIN staff_members m ON m.id=i.staff_id
+          WHERE i.token_hash=? AND i.expires_at>? AND m.is_active=1
+            AND NOT EXISTS(SELECT 1 FROM users u WHERE u.email=i.email OR u.staff_id=m.id)
+          RETURNING id`).bind(id,hashed,digest(body.token),Date.now()),
+        db.prepare('DELETE FROM staff_invitations WHERE token_hash=? AND EXISTS(SELECT 1 FROM users WHERE id=?)').bind(digest(body.token),id),
+      ])
+      return created.results.length ? Response.json({ message: 'Acesso criado. Inicia sessão com o teu email e palavra-passe.' }) : Response.json({ error: 'O convite expirou, foi utilizado ou já existe uma conta com este email.' }, { status: 400 })
+    }
     if (path === '/api/auth/session' && request.method === 'GET') {
       const account = await authenticate(request, db)
       return account ? Response.json(account) : Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
@@ -147,7 +164,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
           password_hash_at_request = excluded.password_hash_at_request, expires_at = excluded.expires_at,
           created_at = CURRENT_TIMESTAMP`).bind(digest(token), user.id, user.password_hash, expiresAt),
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
-          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')`).bind(user.organization_id),
+          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview') AND json_extract(payload,'$.to')=?`).bind(user.organization_id,email),
         emailStatement(db, user.organization_id, 'password_reset_request', { to: email, subject: 'Recupera o acesso à tua conta',
           text: `Foi pedida a recuperação de acesso à tua conta Booking SaaS.\n\nEscolhe uma nova palavra-passe neste link:\n\n${appUrl(env)}/#reset-password=${token}\n\nO link é válido por 30 minutos e só pode ser usado uma vez. A palavra-passe atual e as sessões mantêm-se até confirmares. Se não fizeste este pedido, ignora esta mensagem.`,
         }, expiresAt, localPreview(request, env)),
@@ -211,6 +228,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
       const dummy = 'scrypt:16384:8:5:00000000000000000000000000000000:' + '0'.repeat(64)
       const valid = await verifyPassword(body.password, user?.password_hash || dummy)
       if (!user || !valid) return Response.json({ error: 'Email ou palavra-passe incorretos.' }, { status: 401 })
+      if (!await getAccount(db, user.id)) return Response.json({ error: 'Email ou palavra-passe incorretos.' }, { status: 401 })
       userId = user.id
       const session = newSession(db, userId)
       const oldToken = cookieToken(request)
@@ -246,7 +264,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
           password_hash_at_request = excluded.password_hash_at_request, expires_at = excluded.expires_at,
           created_at = CURRENT_TIMESTAMP`).bind(digest(token), account.user.id, user.password_hash, expiresAt),
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
-          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')`).bind(account.organization.id),
+          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview') AND json_extract(payload,'$.to')=?`).bind(account.organization.id,account.user.email),
         emailStatement(db, account.organization.id, 'password_request', {
           to: account.user.email, subject: 'Confirma a alteração da palavra-passe',
           text: `Olá, ${account.user.full_name}.\n\nFoi pedida uma alteração da palavra-passe da tua conta. Abre este link para escolher uma nova palavra-passe:\n\n${link}\n\nO link é válido durante 30 minutos e só pode ser usado uma vez. A tua palavra-passe mantém-se até confirmares. Se não fizeste este pedido, ignora a mensagem.`,
@@ -288,8 +306,8 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
           SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`).bind(pending.user_id, pending.user_id, hashed),
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL
           WHERE organization_id = ? AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')
-            AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`)
-          .bind(pending.organization_id, pending.user_id, hashed),
+            AND json_extract(payload,'$.to')=? AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`)
+          .bind(pending.organization_id, pending.email, pending.user_id, hashed),
       ])
       if (!updated.results.length) return Response.json({ error: 'O link expirou ou já foi utilizado.' }, { status: 400 })
       return Response.json({ message: 'Palavra-passe alterada. Inicia sessão com a nova palavra-passe.' }, {

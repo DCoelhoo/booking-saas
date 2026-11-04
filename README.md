@@ -46,6 +46,11 @@ privado no email para cancelar ou reagendar. O prazo inicial é de 24 horas e po
 ser alterado em Definições. Ver [gestão de marcações](docs/booking-lifecycle.md).
 
 Logótipos podem ser configurados através de um endereço HTTPS existente.
+Em **Colaboradores**, convida até 10 perfis por estabelecimento, incluindo o
+perfil inicial. Cada colaborador tem acesso apenas à sua agenda. Os clientes
+escolhem o colaborador na página pública antes de reservar. Ver [equipa](docs/staff.md).
+As faturas da mensalidade têm uma página própria em **Faturas**; os documentos
+reais continuam pendentes da integração de cobrança e faturação do SaaS.
 O envio de imagens para R2 e a verificação de email ficam para as próximas etapas.
 A recuperação de palavra-passe está disponível no login. Os lembretes por email
 são preparados cerca de 24 horas antes da marcação; podem ser testados nas

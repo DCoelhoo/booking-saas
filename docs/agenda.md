@@ -7,9 +7,9 @@ sem apagar o histórico. Consulta [estados e gestão pelo cliente](booking-lifec
 
 As datas e horas representam a hora local do negócio. `start_at` e `end_at`
 são guardados no formato `YYYY-MM-DDTHH:mm:ss`, sem conversão para UTC.
-Existe uma única agenda por organização. Os horários são configuráveis nas
+Existe uma agenda por colaborador, com visão conjunta para o dono. Os horários são configuráveis nas
 Definições, em «Horários, pausas e encerramentos». Europe/Lisbon mantém-se como
-fuso de referência; a escolha de outros fusos e recursos independentes são etapas futuras.
+fuso de referência; a escolha de outros fusos e recursos independentes são etapas futuras. Ver [colaboradores](staff.md).
 
 `GET /api/availability` consulta o horário do negócio autenticado.
 `PUT /api/availability` guarda `weekly` (sete listas de períodos `start`/`end`,

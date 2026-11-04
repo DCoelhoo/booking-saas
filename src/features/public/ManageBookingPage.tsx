@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './PublicBookingPage.css'
 
 type Data = {
-  booking: { id: string; service_name: string; status: string; version: number; start_at: string; end_at: string }
+  booking: { id: string; service_name: string; staff_name: string; status: string; version: number; start_at: string; end_at: string }
   business: { name: string; contact_email: string; phone: string }
   can_cancel: boolean; can_reschedule: boolean; change_hours: number; today: string; max_date: string
 }
@@ -78,7 +78,7 @@ export default function ManageBookingPage() {
       </section>}
     </aside><section className="public-reservation" aria-label="Gerir marcação">
       {loadError ? <><h2>Não foi possível abrir a marcação</h2><p role="alert">{loadError}</p><button className="public-secondary" onClick={() => setReload((n) => n + 1)}>Tentar novamente</button></> : !data ? <p role="status">A carregar marcação...</p> : <>
-        <h2>{data.booking.service_name}</h2><p><strong>{labels[data.booking.status]}</strong></p>
+        <h2>{data.booking.service_name}</h2><p>Com {data.booking.staff_name}</p><p><strong>{labels[data.booking.status]}</strong></p>
         <div className="public-summary"><strong>{dayLabel(data.booking.start_at)}</strong><span>{data.booking.start_at.slice(11, 16)}–{data.booking.end_at.slice(11, 16)} · Hora de Lisboa</span><small>Referência: {data.booking.id}</small></div>
         {notice && <p role="status">{notice}</p>}{error && <p className="public-error" role="alert">{error}</p>}
         {data.booking.status === 'confirmed' && <p>Podes cancelar ou reagendar até {data.change_hours} horas antes da marcação. Depois desse prazo, contacta o negócio.</p>}

@@ -6,7 +6,7 @@ import { businessNow } from './businessTime.ts'
 export { businessNow } from './businessTime.ts'
 
 export const projection = `WITH projected AS (
-  SELECT id, organization_id, service_id, customer_name, start_at, end_at,
+  SELECT id, organization_id, staff_id, service_id, customer_name, start_at, end_at,
     CASE WHEN service_id = ? AND julianday(start_at) > julianday(?)
       THEN strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes')
       ELSE end_at END AS proposed_end,
@@ -18,7 +18,7 @@ export const conflictCondition = `EXISTS (
   SELECT 1 FROM projected a WHERE a.affected AND (
     a.proposed_end IS NULL OR substr(a.proposed_end, 1, 10) != substr(a.start_at, 1, 10)
     OR NOT ${availabilityCondition('(SELECT availability FROM organizations WHERE id = a.organization_id)', 'a.start_at', 'a.proposed_end')}
-    OR EXISTS (SELECT 1 FROM projected b WHERE b.id != a.id
+    OR EXISTS (SELECT 1 FROM projected b WHERE b.id != a.id AND b.staff_id = a.staff_id
       AND julianday(a.start_at) < julianday(b.proposed_end)
       AND julianday(a.proposed_end) > julianday(b.start_at))
   )

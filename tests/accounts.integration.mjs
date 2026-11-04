@@ -1,3 +1,4 @@
+import { applySql } from './apply-sql.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
@@ -23,9 +24,9 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     let db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql', '0010_staff.sql']) {
       const schema = await readFile(`migrations/${file}`, 'utf8')
-      for (const statement of schema.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
+      await applySql(db,schema)
     }
     for (const path of ['services', 'bookings?date=2090-01-01', 'auth/session']) {
       assert.equal((await request(path)).status, 401)

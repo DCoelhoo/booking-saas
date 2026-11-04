@@ -9,6 +9,7 @@ import { handleBookingPaymentSettings, servicePaymentQuote } from './bookingPaym
 import { handleBookings } from './bookings.ts'
 import { handlePublicBooking } from './publicBooking.ts'
 import { queueBookingReminders } from './reminders.ts'
+import { handleStaff } from './staff.ts'
 import { handleBookingManagement } from './bookingLifecycle.ts'
 import { jsonBody } from './auth.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
@@ -29,6 +30,13 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (account.user.role === 'staff') {
+      const allowed = /^\/api\/bookings(?:\/[^/]+)?$/.test(url.pathname) ||
+        (request.method === 'GET' && ['/api/services','/api/availability','/api/booking-payment-settings','/api/subscription','/api/staff'].includes(url.pathname))
+      if (!allowed) return Response.json({ error: 'Não tens permissão para esta área.' }, { status: 403 })
+    }
+    const staffResponse = await handleStaff(request, env, account)
+    if (staffResponse) return staffResponse
     if (url.pathname === '/api/reminders/preview-run' && request.method === 'POST') {
       if (!localPreview(request, env)) return Response.json({ error: 'Endpoint não encontrado.' }, { status: 404 })
       if (!await jsonBody(request)) return Response.json({ error: 'Dados inválidos.' }, { status: 400 })
@@ -70,7 +78,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (previewMatch && request.method === 'POST') {
       return previewDuration(request, env.booking_saas_db, previewMatch[1], organizationId)
     }
-    const bookingsResponse = await handleBookings(request, env.booking_saas_db, organizationId, localPreview(request, env))
+    const bookingsResponse = await handleBookings(request, env.booking_saas_db, organizationId, localPreview(request, env), account.user.role === 'staff' ? account.user.staff_id : null)
     if (bookingsResponse) return bookingsResponse
 
     if (url.pathname === '/api/services' && request.method === 'GET') {

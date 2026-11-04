@@ -1,5 +1,7 @@
 import { secureFetch } from '../account/accountApi'
 export type Booking = {
+  staff_id: string
+  staff_name: string
   status: 'confirmed' | 'completed' | 'canceled' | 'no_show'
   version: number
   id: string
@@ -29,7 +31,7 @@ export async function getBookings(date: string): Promise<Booking[]> {
 }
 
 export async function createBooking(input: {
-  customer_name: string; service_id: string; date: string; start_time: string
+  customer_name: string; service_id: string; date: string; start_time: string; staff_id: string
 }): Promise<Booking> {
   const response = await secureFetch('/api/bookings', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),

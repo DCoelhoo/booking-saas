@@ -40,8 +40,9 @@ IP e por email, com janela de 15 minutos, contabilizados atomicamente na D1.
 
 O link é único e abre a página pública de marcações em `/:slug`. Consulta [página pública](public-booking.md).
 Logótipos usam um URL HTTPS existente; upload para R2 fica para a integração seguinte.
-O email de acesso não é editável. Verificação de email, convites de equipa e
-autenticação de dois fatores ainda não estão implementados.
+O email de acesso não é editável. Verificação de email e autenticação de dois
+fatores ainda não estão implementados. Os [convites de colaboradores](staff.md)
+criam acessos limitados à agenda individual.
 Não existe publicação automática nesta etapa.
 O pedido de alteração de palavra-passe exige acesso ao email da conta. A recuperação
 sem a palavra-passe atual está disponível no login, em «Esqueci-me da palavra-passe».

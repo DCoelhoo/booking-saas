@@ -22,7 +22,7 @@
 .public-reservation { background: white; border: 1px solid #e7eaf0; border-radius: 22px; padding: 30px; box-shadow: 0 16px 48px #17203308; min-width: 0; }
 .public-reservation h2 { font-size: 25px; letter-spacing: -0.6px; }
 .public-reservation p { font-size: 14px; line-height: 1.6; color: #647084; }
-.public-steps { display: flex; list-style: none; gap: 18px; margin: 0 0 32px; padding: 0; }
+.public-steps { display: flex; flex-wrap: wrap; list-style: none; gap: 18px; margin: 0 0 32px; padding: 0; }
 .public-steps li { display: flex; align-items: center; gap: 7px; color: #647084; font-size: 12px; }
 .public-steps span { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #dce2ec; flex-shrink: 0; }
 .public-steps li[aria-current] { font-weight: 700; color: #172033; }

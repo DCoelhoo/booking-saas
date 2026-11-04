@@ -7,7 +7,7 @@ import ForgotPassword from './ForgotPassword'
 
 const passwordLinkToken = () => {
   const hash = new URLSearchParams(window.location.hash.slice(1))
-  return hash.get('change-password') || hash.get('reset-password') || ''
+  return hash.get('change-password') || hash.get('reset-password') || hash.get('staff-invitation') || ''
 }
 
 export default function AccountRoot() {
@@ -27,6 +27,7 @@ export default function AccountRoot() {
   const [slug, setSlug] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
   const [passwordToken, setPasswordToken] = useState(passwordLinkToken)
+  const [invitation, setInvitation] = useState(()=>new URLSearchParams(window.location.hash.slice(1)).has('staff-invitation'))
 
   useEffect(() => {
     let cancelled = false
@@ -38,7 +39,7 @@ export default function AccountRoot() {
 
   useEffect(() => {
     const expire = () => { setAccount(null); setError('A sessão terminou. Inicia sessão novamente.'); setPassword(''); setConfirmation('') }
-    const followEmail = () => setPasswordToken(passwordLinkToken())
+    const followEmail = () => { setPasswordToken(passwordLinkToken()); setInvitation(new URLSearchParams(window.location.hash.slice(1)).has('staff-invitation')) }
     window.addEventListener('session-expired', expire)
     window.addEventListener('hashchange', followEmail)
     return () => { window.removeEventListener('session-expired', expire); window.removeEventListener('hashchange', followEmail) }
@@ -92,7 +93,7 @@ export default function AccountRoot() {
     setRegister(false)
   }
 
-  if (passwordToken) return <ConfirmPassword token={passwordToken} onDone={() => {
+  if (passwordToken) return <ConfirmPassword token={passwordToken} invitation={invitation} onDone={() => {
     setPasswordToken(''); setForgot(false); setAccount(null); setPassword(''); setConfirmation(''); setLoading(true); setRetry((n) => n + 1)
   }} />
   if (loading) return <main className="account-shell"><p role="status">A verificar sessão...</p></main>

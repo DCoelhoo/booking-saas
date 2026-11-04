@@ -13,16 +13,16 @@ export function bookingLink(env: EmailEnv) {
     url: `${appUrl(env)}/reserva/gerir#token=${token}` }
 }
 export type LifecycleBooking = SubscriptionFields & {
-  id: string; organization_id: string; service_id: string; status: string; version: number
+  id: string; organization_id: string; staff_id: string; service_id: string; status: string; version: number
   start_at: string; end_at: string; customer_name: string; customer_email: string
-  service_name: string; business_name: string; contact_email: string; phone: string
+  service_name: string; staff_name: string; business_name: string; contact_email: string; phone: string
   availability: string; booking_change_hours: number; is_active: number
 }
-const select = `SELECT b.*, COALESCE(b.service_name_snapshot, s.name) AS service_name,
+const select = `SELECT b.*, m.name AS staff_name, COALESCE(b.service_name_snapshot, s.name) AS service_name,
   o.name AS business_name, o.contact_email, o.phone, o.availability, o.booking_change_hours,
-  o.trial_started_at, o.trial_ends_at, o.subscription_status, o.paid_until, s.is_active
+  o.trial_started_at, o.trial_ends_at, o.subscription_status, o.paid_until, (s.is_active AND m.is_active) AS is_active
   FROM bookings b JOIN organizations o ON o.id = b.organization_id
-  JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id`
+  JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id JOIN staff_members m ON m.id = b.staff_id`
 export const findBooking = (db: D1Database, id: string, org: string) => db.prepare(`${select} WHERE b.id = ? AND b.organization_id = ?`).bind(id, org).first<LifecycleBooking>()
 const conflict = () => Response.json({ error: 'A marcação ou o horário mudou. Atualiza a página e tenta novamente.' }, { status: 409 })
 function beforeDeadline(b: LifecycleBooking) {
@@ -38,9 +38,9 @@ function duration(b: LifecycleBooking) { return Math.round((Date.parse(`${b.end_
 async function availableSlots(db: D1Database, b: LifecycleBooking, date: string) {
   const config: Availability = JSON.parse(b.availability)
   if (config.closures.some((p) => date >= p.start_date && date <= p.end_date)) return []
-  const { results } = await db.prepare(`SELECT start_at, end_at FROM bookings WHERE organization_id = ? AND id != ? AND status != 'canceled'
+  const { results } = await db.prepare(`SELECT start_at, end_at FROM bookings WHERE organization_id = ? AND id != ? AND staff_id = ? AND status != 'canceled'
     AND julianday(start_at) < julianday(?) AND julianday(end_at) > julianday(?)`)
-    .bind(b.organization_id, b.id, `${date}T23:59:59`, `${date}T00:00:00`).all<{ start_at: string; end_at: string }>()
+    .bind(b.organization_id, b.id, b.staff_id, `${date}T23:59:59`, `${date}T00:00:00`).all<{ start_at: string; end_at: string }>()
   const slots = []
   for (const p of config.weekly[new Date(`${date}T12:00:00Z`).getUTCDay()]) {
     for (let m = minute(p.start); m + duration(b) <= minute(p.end); m += 15) {
@@ -79,13 +79,13 @@ export async function changeBooking(db: D1Database, b: LifecycleBooking, action:
       AND (? = 'owner' OR julianday(start_at) - (SELECT booking_change_hours / 24.0 FROM organizations WHERE id = organization_id) > julianday(?))
       AND (? = 0 OR (? > ? AND EXISTS (
         SELECT 1 FROM organizations o JOIN services s ON s.organization_id = o.id
-        WHERE o.id = bookings.organization_id AND s.id = bookings.service_id AND s.is_active = 1
+        WHERE o.id = bookings.organization_id AND s.id = bookings.service_id AND s.is_active = 1 AND EXISTS(SELECT 1 FROM staff_members m WHERE m.id=bookings.staff_id AND m.is_active=1)
           AND ((o.trial_started_at <= ? AND o.trial_ends_at > ?) OR (o.subscription_status IN ('active', 'canceled') AND o.paid_until > ?))
           AND ${allowed}
           AND EXISTS (SELECT 1 FROM json_each(o.availability, '$.weekly[' || strftime('%w', ?) || ']') p
             WHERE substr(?,12,5) >= json_extract(p.value,'$.start') AND substr(?,12,5) <= json_extract(p.value,'$.end')
               AND ((strftime('%H', ?) * 60 + strftime('%M', ?) - (substr(json_extract(p.value,'$.start'),1,2)*60 + substr(json_extract(p.value,'$.start'),4,2))) % 15) = 0))
-        AND NOT EXISTS (SELECT 1 FROM bookings other WHERE other.organization_id = bookings.organization_id AND other.id != bookings.id AND other.status != 'canceled'
+        AND NOT EXISTS (SELECT 1 FROM bookings other WHERE other.organization_id = bookings.organization_id AND other.id != bookings.id AND other.staff_id = bookings.staff_id AND other.status != 'canceled'
           AND julianday(other.start_at) < julianday(?) AND julianday(other.end_at) > julianday(?)))) RETURNING id`)
     .bind(start, end, status, start, end, b.id, b.organization_id, version, actor, now, reschedule ? 1 : 0, start, now,
       Date.now(), Date.now(), Date.now(), start, start, end, start, start, end, start)
@@ -100,7 +100,7 @@ export async function changeBooking(db: D1Database, b: LifecycleBooking, action:
         'Horário anterior: ' || e.previous_start_at || ' – ' || e.previous_end_at || char(10) ||
         'Horário: ' || b.start_at || ' – ' || b.end_at || ' (hora de Lisboa)' || char(10) || 'Referência: ' || b.id || char(10) || 'Para outras alterações, utiliza o link do email de confirmação ou contacta o negócio.'), ?
     FROM booking_events e JOIN bookings b ON b.id = e.booking_id JOIN organizations o ON o.id = b.organization_id
-    JOIN users u ON u.organization_id = b.organization_id JOIN services s ON s.id = b.service_id
+    JOIN users u ON u.organization_id = b.organization_id AND u.role = 'owner' JOIN services s ON s.id = b.service_id
     WHERE e.id = ? AND ${recipient === 'customer' ? "b.customer_email != ''" : '1 = 1'}`)
     .bind(`${event}:${recipient}`, reschedule ? 'Marcação reagendada' : status === 'canceled' ? 'Marcação cancelada' : status === 'completed' ? 'Marcação concluída' : 'Falta de comparência registada',
       reschedule ? 'A marcação foi reagendada. O preço acordado mantém-se.' : status === 'canceled' ? 'A marcação foi cancelada.' : status === 'completed' ? 'A marcação foi concluída.' : 'Foi registada uma falta de comparência.', preview ? 'preview' : 'pending', event))
@@ -126,7 +126,7 @@ export async function handleBookingManagement(request: Request, env: EmailEnv): 
     if (!validDate(date) || date < businessNow().slice(0, 10) || date > maxDate()) return Response.json({ error: 'Data inválida.' }, { status: 400 })
     return Response.json({ slots: await availableSlots(db, b, date) })
   }
-  if (request.method === 'GET') return Response.json({ booking: { id: b.id, service_name: b.service_name, status: b.status, version: b.version, start_at: b.start_at, end_at: b.end_at },
+  if (request.method === 'GET') return Response.json({ booking: { id: b.id, staff_name: b.staff_name, service_name: b.service_name, status: b.status, version: b.version, start_at: b.start_at, end_at: b.end_at },
     business: { name: b.business_name, contact_email: b.contact_email, phone: b.phone }, change_hours: b.booking_change_hours,
     can_cancel: canChange(b), can_reschedule: canChange(b) && !!b.is_active && subscriptionAccess(b).can_manage,
     today: businessNow().slice(0, 10), max_date: maxDate() })

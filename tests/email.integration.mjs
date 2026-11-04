@@ -1,3 +1,4 @@
+import { applySql } from './apply-sql.mjs'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -21,9 +22,9 @@ test('email events are isolated, password links expire and jobs survive delivery
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     const db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql', '0007_public_bookings.sql', '0008_booking_lifecycle.sql', '0009_booking_reminders.sql', '0010_staff.sql']) {
       const sql = await readFile(`migrations/${file}`, 'utf8')
-      for (const statement of sql.split(';').filter((s) => s.trim())) await db.prepare(statement).run()
+      await applySql(db,sql)
     }
     const registered = await request('auth/register', 'POST', credentials)
     assert.equal(registered.status, 201)

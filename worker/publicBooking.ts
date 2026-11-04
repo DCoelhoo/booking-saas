@@ -36,7 +36,7 @@ async function throttle(db: D1Database, key: string, maximum: number): Promise<b
 }
 
 async function replay(db: D1Database, org: string, key: string, fingerprint: string): Promise<Response | null> {
-  const row = await db.prepare(`SELECT id, status, start_at, end_at, service_name_snapshot AS service_name,
+  const row = await db.prepare(`SELECT id, status, staff_id, (SELECT name FROM staff_members WHERE id=bookings.staff_id) AS staff_name, start_at, end_at, service_name_snapshot AS service_name,
     total_cents, online_due_cents, on_site_due_cents, payment_mode, public_request_hash
     FROM bookings WHERE organization_id = ? AND public_request_id = ?`).bind(org, key).first()
   if (!row) return null
@@ -57,19 +57,22 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
     FROM organizations o WHERE slug = ? AND EXISTS (SELECT 1 FROM users u WHERE u.organization_id = o.id)`)
     .bind(match[1]).first<PublicOrganization>()
   if (!org) return Response.json({ error: 'Página não encontrada.' }, { status: 404 })
+  const staffId = url.searchParams.get('staff_id') || `staff:${org.id}`
   const active = subscriptionAccess(org).can_manage
   const policy: BookingPaymentSettings = JSON.parse(org.booking_payment_settings)
   const calendar = limits()
   if (!match[2] && request.method === 'GET') {
+    const { results: staff } = await db.prepare('SELECT id,name FROM staff_members WHERE organization_id=? AND is_active=1 ORDER BY name,id').bind(org.id).all()
     const { results } = active ? await db.prepare(`SELECT id, name, duration_minutes, price_cents
       FROM services WHERE organization_id = ? AND is_active = 1 ORDER BY name`).bind(org.id).all<PublicService>() : { results: [] }
     return Response.json({ business: { name: org.name, slug: org.slug, description: org.description,
       contact_email: org.contact_email, phone: org.phone, logo_url: org.logo_url, brand_color: org.brand_color },
       available: active, today: calendar.today, max_date: calendar.maxDate, time_zone: 'Europe/Lisbon', change_hours: org.booking_change_hours,
-      services: results.map((service) => ({ ...service, payment: paymentQuote(service.price_cents, policy) })) })
+      staff: active ? staff : [], services: results.map((service) => ({ ...service, payment: paymentQuote(service.price_cents, policy) })) })
   }
   if (match[2] === 'slots' && request.method === 'GET') {
     if (!active) return unavailable()
+    if (!await db.prepare('SELECT id FROM staff_members WHERE id=? AND organization_id=? AND is_active=1').bind(staffId,org.id).first()) return Response.json({ error: 'Colaborador indisponível.' },{status:404})
     const date = url.searchParams.get('date')
     const serviceId = url.searchParams.get('service_id')
     if (!validDate(date) || date < calendar.today || date > calendar.maxDate || !serviceId) {
@@ -83,9 +86,9 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
     if (config.closures.some((closure) => date >= closure.start_date && date <= closure.end_date)) return Response.json({ slots: [] })
     const periods = config.weekly[new Date(`${date}T12:00:00Z`).getUTCDay()]
     const { results: booked } = await db.prepare(`SELECT strftime('%Y-%m-%dT%H:%M:%S', start_at) AS start_at,
-      strftime('%Y-%m-%dT%H:%M:%S', end_at) AS end_at FROM bookings WHERE organization_id = ? AND status != 'canceled'
+      strftime('%Y-%m-%dT%H:%M:%S', end_at) AS end_at FROM bookings WHERE organization_id = ? AND staff_id = ? AND status != 'canceled'
       AND julianday(start_at) < julianday(?) AND julianday(end_at) > julianday(?)`)
-      .bind(org.id, `${date}T23:59:59`, `${date}T00:00:00`).all<{ start_at: string; end_at: string }>()
+      .bind(org.id, staffId, `${date}T23:59:59`, `${date}T00:00:00`).all<{ start_at: string; end_at: string }>()
     const slots: { start_time: string; end_time: string }[] = []
     for (const period of periods) {
       for (let start = minutes(period.start); start + service.duration_minutes <= minutes(period.end); start += 15) {
@@ -112,9 +115,10 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
       return Response.json({ error: 'Verifica o nome, os contactos, o serviço e o horário.' }, { status: 400 })
     }
     const name = body.customer_name.trim()
+    const selectedStaff = typeof body.staff_id === 'string' ? body.staff_id : `staff:${org.id}`
     const email = body.customer_email.trim().toLowerCase()
     const phone = body.customer_phone.trim()
-    const fingerprint = hash(JSON.stringify([name, email, phone, body.service_id, body.date, body.start_time, body.expected_price_cents, body.expected_duration_minutes]))
+    const fingerprint = hash(JSON.stringify([name, email, phone, body.service_id, body.date, body.start_time, body.expected_price_cents, body.expected_duration_minutes, selectedStaff]))
     const previous = await replay(db, org.id, body.request_id, fingerprint)
     if (previous) return previous
     if (!active) return unavailable()
@@ -131,37 +135,39 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
     const management = bookingLink(env)
     const allowed = availabilityCondition('c.availability', 'c.start_at', 'c.end_at')
     const insert = db.prepare(`WITH candidate AS (
-      SELECT s.id AS service_id, s.name AS service_name, s.price_cents, s.duration_minutes, o.id AS organization_id,
+      SELECT s.id AS service_id, m.id AS staff_id, s.name AS service_name, s.price_cents, s.duration_minutes, o.id AS organization_id,
         o.availability, json_extract(o.booking_payment_settings, '$.mode') AS payment_mode,
         ? AS start_at, strftime('%Y-%m-%dT%H:%M:%S', ?, '+' || s.duration_minutes || ' minutes') AS end_at
       FROM services s JOIN organizations o ON o.id = s.organization_id
+      JOIN staff_members m ON m.organization_id=o.id AND m.id=? AND m.is_active=1
       WHERE s.id = ? AND s.organization_id = ? AND s.is_active = 1 AND s.price_cents = ? AND s.duration_minutes = ?
         AND ((o.trial_started_at <= ? AND o.trial_ends_at > ?) OR (o.subscription_status IN ('active', 'canceled') AND o.paid_until > ?))
         AND (json_extract(o.booking_payment_settings, '$.mode') = 'on_site' OR s.price_cents = 0)
     ) INSERT INTO bookings (id, organization_id, service_id, customer_name, customer_email, customer_phone,
       start_at, end_at, booking_source, total_cents, online_due_cents, on_site_due_cents, payment_mode,
-      service_name_snapshot, public_request_id, public_request_hash, management_token_hash, management_expires_at)
+      service_name_snapshot, public_request_id, public_request_hash, management_token_hash, management_expires_at, staff_id)
     SELECT ?, c.organization_id, c.service_id, ?, ?, ?, c.start_at, c.end_at, 'public', c.price_cents, 0, c.price_cents,
-      c.payment_mode, c.service_name, ?, ?, ?, ? FROM candidate c
+      c.payment_mode, c.service_name, ?, ?, ?, ?, c.staff_id FROM candidate c
     WHERE ${allowed} AND c.start_at > ?
       AND EXISTS (SELECT 1 FROM json_each(c.availability, '$.weekly[' || strftime('%w', c.start_at) || ']') slot
         WHERE substr(c.start_at, 12, 5) >= json_extract(slot.value, '$.start')
           AND substr(c.end_at, 12, 5) <= json_extract(slot.value, '$.end')
           AND ((strftime('%H', c.start_at) * 60 + strftime('%M', c.start_at)
             - (substr(json_extract(slot.value, '$.start'), 1, 2) * 60 + substr(json_extract(slot.value, '$.start'), 4, 2))) % 15) = 0)
-      AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id AND b.status != 'canceled'
+      AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id AND b.staff_id = c.staff_id AND b.status != 'canceled'
         AND julianday(b.start_at) < julianday(c.end_at) AND julianday(b.end_at) > julianday(c.start_at)) RETURNING id`)
-      .bind(startAt, startAt, body.service_id, org.id, body.expected_price_cents, body.expected_duration_minutes,
+      .bind(startAt, startAt, selectedStaff, body.service_id, org.id, body.expected_price_cents, body.expected_duration_minutes,
         Date.now(), Date.now(), Date.now(), id, name, email, phone, body.request_id, fingerprint, management.hash, management.expires, businessNow())
     try {
       const [created] = await db.batch([
         insert,
         bookingNotification(db, id, org.id, preview),
+        bookingNotification(db, id, org.id, preview, true),
         db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
           SELECT ?, b.organization_id, 'booking_confirmation', json_object('to', b.customer_email,
             'subject', 'Marcação confirmada — ' || o.name,
             'text', 'A tua marcação está confirmada.' || char(10) || 'Negócio: ' || o.name || char(10) ||
-              'Serviço: ' || b.service_name_snapshot || char(10) || 'Data: ' || substr(b.start_at, 1, 10) || char(10) ||
+              'Serviço: ' || b.service_name_snapshot || char(10) || 'Colaborador: ' || (SELECT name FROM staff_members WHERE id=b.staff_id) || char(10) || 'Data: ' || substr(b.start_at, 1, 10) || char(10) ||
               'Horário: ' || substr(b.start_at, 12, 5) || '–' || substr(b.end_at, 12, 5) || char(10) ||
               'A pagar no local: ' || printf('%.2f', b.on_site_due_cents / 100.0) || ' EUR' || char(10) ||
               'Referência: ' || b.id || char(10) || 'Cancelar ou reagendar: ' || ? || char(10) ||
