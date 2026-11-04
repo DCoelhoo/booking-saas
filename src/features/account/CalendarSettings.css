@@ -1,0 +1,14 @@
+.calendar-settings>p { line-height:1.7; }
+.calendar-local-note { padding:12px 14px; background:var(--color-soft); border-radius:8px; }
+.calendar-confirm { display:flex; align-items:flex-start; gap:12px; font-size:14px; line-height:1.6; margin:18px 0; }
+.calendar-confirm input { margin-top:4px; width:18px; height:18px; flex-shrink:0; accent-color:var(--color-primary); }
+.calendar-actions { display:flex; flex-wrap:wrap; gap:12px; }
+.calendar-link-box { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:18px; border:1px solid var(--color-border); border-radius:10px; margin-top:20px; }
+.calendar-link-box label { font-size:14px; font-weight:600; width:100%; }
+.calendar-link-box input { width:100%; min-width:0; padding:12px; font:inherit; font-size:13px; border:1px solid var(--color-border); border-radius:8px; }
+.calendar-link-box p { width:100%; margin:0; font-size:12px; }
+.calendar-settings a { color:var(--color-primary); font-size:14px; }
+.calendar-guides { display:grid; gap:12px; margin-top:20px; }
+.calendar-guides details { border:1px solid var(--color-border); border-radius:8px; padding:14px; }
+.calendar-guides summary { cursor:pointer; font-weight:600; font-size:14px; }
+.calendar-guides p,.calendar-guides li { line-height:1.7; font-size:14px; }

@@ -62,6 +62,10 @@ reais continuam pendentes da integração de cobrança e faturação do SaaS.
 Em **Definições → A tua fotografia**, donos e colaboradores podem enviar ou remover
 a sua fotografia pessoal, visível também na página de reservas. As imagens usam R2
 local em desenvolvimento. Ver [fotografias](docs/profile-photos.md).
+Em **Definições → Google Calendar e Apple/iCloud**, cada pessoa pode criar um
+link privado para subscrever a sua agenda no calendário pessoal. A ligação é de
+leitura e requer uma aplicação publicada em HTTPS para funcionar nesses serviços.
+Ver [calendários](docs/calendar.md).
 O envio de imagens para R2 e a verificação de email ficam para as próximas etapas.
 A recuperação de palavra-passe está disponível no login. Os lembretes por email
 são preparados cerca de 24 horas antes da marcação; podem ser testados nas

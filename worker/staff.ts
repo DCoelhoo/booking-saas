@@ -22,6 +22,7 @@ export async function handleStaff(request: Request, env: EmailEnv, account: Acco
     const [updated] = await db.batch([
       db.prepare('UPDATE staff_members SET name=?,is_active=? WHERE id=? AND organization_id=? RETURNING id').bind(body.name.trim(),body.is_active,match[1],org),
       db.prepare(`DELETE FROM sessions WHERE user_id IN (SELECT u.id FROM users u JOIN staff_members m ON m.id=u.staff_id WHERE m.id=? AND m.organization_id=? AND m.is_active=0 AND u.role='staff')`).bind(match[1],org),
+      db.prepare(`DELETE FROM calendar_subscriptions WHERE user_id IN (SELECT u.id FROM users u JOIN staff_members m ON m.id=u.staff_id WHERE m.id=? AND m.organization_id=? AND m.is_active=0 AND u.role='staff')`).bind(match[1],org),
       db.prepare(`DELETE FROM password_change_tokens WHERE user_id IN (SELECT u.id FROM users u JOIN staff_members m ON m.id=u.staff_id WHERE m.id=? AND m.organization_id=? AND m.is_active=0 AND u.role='staff')`).bind(match[1],org),
       db.prepare('DELETE FROM staff_invitations WHERE staff_id IN (SELECT id FROM staff_members WHERE id=? AND organization_id=? AND is_active=0)').bind(match[1],org),
     ])

@@ -13,6 +13,7 @@ import { handleStaff } from './staff.ts'
 import { publicPhoto, myPhoto, type PhotoEnv } from './photos.ts'
 import { handleBookingManagement } from './bookingLifecycle.ts'
 import { jsonBody } from './auth.ts'
+import { calendarFeed,calendarSettings } from './calendar.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
 type Env = PhotoEnv
@@ -22,6 +23,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (url.pathname === '/api/health') return Response.json({ status: 'ok', application: 'booking-saas' })
     const invalidMutation = checkMutation(request)
     if (invalidMutation) return invalidMutation
+    const feedResponse = await calendarFeed(request,env.booking_saas_db)
+    if(feedResponse) return feedResponse
     const photoResponse = await publicPhoto(request,env)
     if (photoResponse) return photoResponse
     const managementResponse = await handleBookingManagement(request, env)
@@ -33,6 +36,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    const calendarResponse = await calendarSettings(request,env,account)
+    if(calendarResponse) return calendarResponse
     const myPhotoResponse = await myPhoto(request,env,account)
     if (myPhotoResponse) return myPhotoResponse
     if (account.user.role === 'staff') {

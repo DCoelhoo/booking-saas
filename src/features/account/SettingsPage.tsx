@@ -5,6 +5,7 @@ import EmailPreviews from './EmailPreviews'
 import BookingPaymentSettings from './BookingPaymentSettings'
 import BookingChangePolicy from './BookingChangePolicy'
 import ProfilePhoto from './ProfilePhoto'
+import CalendarSettings from './CalendarSettings'
 
 export default function SettingsPage({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [profile, setProfile] = useState({ ...account.organization, full_name: account.user.full_name })
@@ -47,9 +48,10 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
     <h2>A tua conta</h2><p>{account.user.email}</p><p>Para alterar a palavra-passe, enviamos um link para o teu email.</p>
     <label htmlFor="staff-password">Palavra-passe atual</label><input id="staff-password" type="password" value={currentPassword} onChange={(e)=>setCurrentPassword(e.target.value)} required minLength={12} maxLength={128} disabled={busy} />
     <button className="secondary-button" disabled={busy}>Enviar link de alteração</button>{error && <p role="alert">{error}</p>}{message && <p role="status">{message}</p>}
-  </form></div>
+  </form><CalendarSettings /></div>
   return <div className="settings-page">
     <ProfilePhoto account={account} onChange={onChange} />
+    <CalendarSettings />
     <section className="panel" aria-label="Plano e subscrição">
       <h2>O teu plano · 10 €/mês por negócio</h2>
       <p>{account.subscription.status === 'trialing' ? `Estás a experimentar a aplicação. Restam ${account.subscription.days_remaining} dias de teste.`
