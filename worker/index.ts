@@ -8,6 +8,7 @@ import { handleAvailability } from './availability.ts'
 import { handleBookingPaymentSettings, servicePaymentQuote } from './bookingPayments.ts'
 import { handleBookings } from './bookings.ts'
 import { handlePublicBooking } from './publicBooking.ts'
+import { queueBookingReminders } from './reminders.ts'
 import { handleBookingManagement } from './bookingLifecycle.ts'
 import { jsonBody } from './auth.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
@@ -28,6 +29,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/reminders/preview-run' && request.method === 'POST') {
+      if (!localPreview(request, env)) return Response.json({ error: 'Endpoint não encontrado.' }, { status: 404 })
+      if (!await jsonBody(request)) return Response.json({ error: 'Dados inválidos.' }, { status: 400 })
+      await queueBookingReminders(env, Date.now(), organizationId)
+      return Response.json({ message: 'Lembretes elegíveis processados. Não foram enviados emails reais.' })
+    }
     if (url.pathname === '/api/booking-change-policy') {
       if (request.method === 'GET') return Response.json(await env.booking_saas_db.prepare('SELECT booking_change_hours AS hours FROM organizations WHERE id = ?').bind(organizationId).first())
       if (request.method !== 'PUT') return Response.json({ error: 'Método não permitido.' }, { status: 405 })
@@ -297,6 +304,7 @@ export default {
     }
   },
   async scheduled(_event: unknown, env: Env): Promise<void> {
+    await queueBookingReminders(env)
     await flushEmailOutbox(env)
   },
 }

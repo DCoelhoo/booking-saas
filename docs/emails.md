@@ -5,14 +5,15 @@ Eventos implementados:
 - Registo: mensagem de boas-vindas para o email de acesso.
 - Pedido autenticado de alteração de palavra-passe: link para o email de acesso,
   depois de validar a palavra-passe atual. Não contém a palavra-passe nova ou antiga.
+- Recuperação de acesso sem sessão: link de utilização única válido por 30 minutos,
+  pedido em «Esqueci-me da palavra-passe». A resposta não revela se o email existe.
 - Confirmação da nova palavra-passe: aviso de segurança e fim de todas as sessões.
 - Nova marcação: aviso para o email de contacto do negócio ou, se vazio, para o
   email de acesso. Inclui cliente, serviço, data e início/fim no horário do negócio.
 
 Reservas feitas pela página pública também geram confirmação para o email do
 cliente. Marcações internas ainda não recolhem esse email. O email de boas-vindas não verifica a titularidade
-do endereço, e a recuperação de palavra-passe sem a palavra-passe atual ainda
-é uma funcionalidade distinta a implementar.
+do endereço. O pedido de recuperação também não altera a palavra-passe antes da confirmação.
 
 ## Teste local, sem envio real
 
@@ -26,6 +27,17 @@ Em Definições, abre «Emails locais — não enviados». Cria uma conta ou uma
 para gerar mensagens. Pede um link de alteração de palavra-passe e abre o link da
 pré-visualização para testar a confirmação. Usa apenas contas e dados fictícios.
 APP_URL deve corresponder ao endereço local em que pretendes abrir a aplicação.
+
+Para testar a recuperação com uma conta fictícia, mantém uma sessão aberta em
+Definições e pede a recuperação na página de login noutro browser. Na sessão
+existente, atualiza a pré-visualização e abre «Abrir recuperação de acesso».
+Depois de confirmares a nova palavra-passe, todas as sessões dessa conta terminam.
+Não há uma caixa de emails pública para consultar links de recuperação.
+
+Os lembretes automáticos são processados pelo cron existente, de cinco em cinco
+minutos. Em desenvolvimento, o botão «Processar lembretes locais» executa a mesma
+seleção para o negócio autenticado e só em modo preview num hostname local.
+Não modifica datas nem antecipa artificialmente a hora. Ver [lembretes](reminders.md).
 
 A pré-visualização só existe com EMAIL_MODE=preview e num hostname local. O endpoint
 GET /api/email-previews exige sessão e filtra pelo negócio autenticado. Mensagens
@@ -49,7 +61,7 @@ Não existem credenciais nem remetentes de produção neste repositório. .dev.v
 está excluído do Git. Não foi publicado nem testado envio para caixas reais.
 
 Sem configuração de envio, registos e marcações mantêm os avisos pendentes na
-fila, mas os pedidos de alteração de palavra-passe devolvem HTTP 503, evitando
+fila, mas os pedidos de alteração e recuperação de palavra-passe devolvem HTTP 503, evitando
 indicar que foi enviado um link que o utilizador não conseguirá receber.
 
 ## Entrega e segurança

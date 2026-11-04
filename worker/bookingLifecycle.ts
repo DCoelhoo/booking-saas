@@ -104,7 +104,11 @@ export async function changeBooking(db: D1Database, b: LifecycleBooking, action:
     WHERE e.id = ? AND ${recipient === 'customer' ? "b.customer_email != ''" : '1 = 1'}`)
     .bind(`${event}:${recipient}`, reschedule ? 'Marcação reagendada' : status === 'canceled' ? 'Marcação cancelada' : status === 'completed' ? 'Marcação concluída' : 'Falta de comparência registada',
       reschedule ? 'A marcação foi reagendada. O preço acordado mantém-se.' : status === 'canceled' ? 'A marcação foi cancelada.' : status === 'completed' ? 'A marcação foi concluída.' : 'Foi registada uma falta de comparência.', preview ? 'preview' : 'pending', event))
-  const [updated] = await db.batch([update, eventStatement, ...notifications])
+  const invalidateReminders = db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL, claim_token = NULL
+    WHERE booking_id = ? AND kind = 'booking_reminder' AND status IN ('pending', 'sending', 'preview', 'failed')
+      AND EXISTS (SELECT 1 FROM booking_events WHERE id = ?)`)
+    .bind(b.id, event)
+  const [updated] = await db.batch([update, eventStatement, ...notifications, invalidateReminders])
   return updated.results.length ? Response.json({ id: b.id, status, start_at: start, end_at: end, version: version + 1 }) : conflict()
 }
 

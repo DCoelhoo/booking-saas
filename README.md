@@ -46,8 +46,10 @@ privado no email para cancelar ou reagendar. O prazo inicial é de 24 horas e po
 ser alterado em Definições. Ver [gestão de marcações](docs/booking-lifecycle.md).
 
 Logótipos podem ser configurados através de um endereço HTTPS existente.
-O envio de imagens para R2, a verificação de email e a recuperação de palavra-passe
-ficam para as próximas etapas.
+O envio de imagens para R2 e a verificação de email ficam para as próximas etapas.
+A recuperação de palavra-passe está disponível no login. Os lembretes por email
+são preparados cerca de 24 horas antes da marcação; podem ser testados nas
+Definições em modo local. Ver [emails](docs/emails.md) e [lembretes](docs/reminders.md).
 
 ## Verificação
 

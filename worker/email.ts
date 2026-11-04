@@ -1,4 +1,5 @@
 import type { D1Database, SendEmail } from '@cloudflare/workers-types'
+import { businessNow } from './businessTime.ts'
 
 export interface EmailEnv {
   booking_saas_db: D1Database
@@ -33,6 +34,11 @@ export function emailStatement(db: D1Database, organizationId: string, kind: str
 export async function flushEmailOutbox(env: EmailEnv): Promise<void> {
   const db = env.booking_saas_db
   const now = Date.now()
+  await db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL, claim_token = NULL
+    WHERE kind = 'booking_reminder' AND status IN ('pending', 'sending', 'preview', 'failed')
+      AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.id = email_outbox.booking_id AND b.status = 'confirmed'
+        AND b.version = email_outbox.booking_version AND b.start_at = email_outbox.booking_start_at AND b.start_at > ?)`)
+    .bind(businessNow()).run()
   await db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL
     WHERE expires_at IS NOT NULL AND expires_at <= ? AND status IN ('pending', 'sending', 'preview', 'failed')`).bind(now).run()
   await db.prepare('DELETE FROM password_change_tokens WHERE expires_at <= ?').bind(now).run()
@@ -50,7 +56,9 @@ export async function flushEmailOutbox(env: EmailEnv): Promise<void> {
       WHERE id = ? AND attempts < 8
         AND ((status = 'pending' AND next_attempt_at <= ?) OR (status = 'sending' AND locked_until <= ?))
         AND (expires_at IS NULL OR expires_at > ?)
-      RETURNING payload, attempts`).bind(Date.now() + 120_000, claim, id, Date.now(), Date.now(), Date.now())
+        AND (kind != 'booking_reminder' OR EXISTS (SELECT 1 FROM bookings b WHERE b.id = email_outbox.booking_id
+          AND b.status = 'confirmed' AND b.version = email_outbox.booking_version AND b.start_at = email_outbox.booking_start_at AND b.start_at > ?))
+      RETURNING payload, attempts`).bind(Date.now() + 120_000, claim, id, Date.now(), Date.now(), Date.now(), businessNow())
       .first<{ payload: string; attempts: number }>()
     if (!job) continue
     try {
