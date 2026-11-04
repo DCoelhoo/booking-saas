@@ -1,4 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import { handleBookings } from './bookings.ts'
 
 interface Env {
   booking_saas_db: D1Database
@@ -7,6 +8,8 @@ interface Env {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
+    const bookingsResponse = await handleBookings(request, env.booking_saas_db)
+    if (bookingsResponse) return bookingsResponse
 
     if (url.pathname === '/api/health') {
       return Response.json({

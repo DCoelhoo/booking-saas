@@ -5,6 +5,11 @@
   gap: 22px;
 }
 
+.bookings-page button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .bookings-heading {
   display: flex;
   flex-direction: column;
