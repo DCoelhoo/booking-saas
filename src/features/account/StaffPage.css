@@ -1,0 +1,10 @@
+.staff-card { display: grid; grid-template-columns: 42px minmax(0,1fr); align-items: center; gap: 14px 12px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--color-border); border-radius: 14px; background: white; }
+.staff-details { display: flex; flex-direction: column; min-width: 0; gap: 6px; overflow-wrap: anywhere; }
+.staff-details strong { font-size: 14px; }
+.staff-details span { font-size: 12px; color: var(--color-muted); line-height: 1.5; }
+.staff-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit,minmax(120px,1fr)); gap: 8px; }
+.staff-actions .secondary-button { min-width: 0; min-height: 44px; }
+@media (min-width: 1000px) {
+  .staff-card { grid-template-columns: 42px minmax(180px,1fr) minmax(0,auto); }
+  .staff-actions { grid-column: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; max-width: 420px; }
+}
