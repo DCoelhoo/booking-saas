@@ -52,7 +52,7 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
   </form><CalendarSettings /></div>
   return <div className="settings-page">
     <ProfilePhoto account={account} onChange={onChange} />
-    <BusinessPhotos account={account} onChange={onChange} />
+    <BusinessPhotos account={account} onChange={onChange} brandColor={profile.brand_color} />
     <CalendarSettings />
     <section className="panel" aria-label="Plano e subscrição">
       <h2>O teu plano · 10 €/mês por negócio</h2>

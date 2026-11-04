@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { secureFetch, type Account } from './accountApi'
 import { preparePhoto } from './preparePhoto'
 import './BusinessPhotos.css'
 
-export default function BusinessPhotos({account,onChange}:{account:Account;onChange:(account:Account)=>void}) {
+export default function BusinessPhotos({account,onChange,brandColor}:{account:Account;onChange:(account:Account)=>void;brandColor:string}) {
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const [notice,setNotice]=useState('')
@@ -21,7 +21,7 @@ export default function BusinessPhotos({account,onChange}:{account:Account;onCha
   }
   return <section className="panel business-photos" aria-label="Imagens do estabelecimento">
     <h2>Imagens do estabelecimento</h2><p>Personaliza a capa e a fotografia circular da tua página de marcações.</p>
-    <div className="business-photo-preview"><div className="business-cover-preview">{account.organization.cover_url && <img src={account.organization.cover_url} alt="Capa do estabelecimento" />}</div>
+    <div className="business-photo-preview" style={{'--public-brand':brandColor} as CSSProperties}><div className="business-cover-preview">{account.organization.cover_url && <img src={account.organization.cover_url} alt="Capa do estabelecimento" />}</div>
       <div className="business-avatar-preview">{(account.organization.profile_photo_url)?<img src={account.organization.profile_photo_url} alt="Fotografia do estabelecimento" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.hidden=true}} />:<span>{account.organization.name.slice(0,1)}</span>}</div>
     </div>
     {(['cover','profile'] as const).map(kind=><div className="business-photo-control" key={kind}>
