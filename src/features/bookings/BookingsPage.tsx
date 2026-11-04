@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { getServices, type Service } from '../services/servicesApi'
 import { getBookings, createBooking, deleteBooking, type Booking } from './bookingsApi'
 import { getAvailability, type Availability } from '../account/availabilityApi'
+import { getBookingPaymentSettings, type BookingPaymentSettings } from '../account/bookingPaymentApi'
+import { paymentQuote } from '../../../shared/bookingPayments'
 import './BookingsPage.css'
 
 function localDate(date: Date): string {
@@ -10,7 +12,7 @@ function localDate(date: Date): string {
 
 export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()))
-  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[]; availability: Availability } | null>(null)
+  const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[]; availability: Availability; paymentSettings: BookingPaymentSettings } | null>(null)
   const [reload, setReload] = useState(0)
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -28,8 +30,8 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
       setLoading(true)
       setLoadError('')
       try {
-        const [bookings, services, availability] = await Promise.all([getBookings(selectedDate), getServices(), getAvailability()])
-        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1), availability })
+        const [bookings, services, availability, paymentSettings] = await Promise.all([getBookings(selectedDate), getServices(), getAvailability(), getBookingPaymentSettings()])
+        if (!cancelled) setData({ date: selectedDate, bookings, services: services.filter((s) => s.is_active === 1), availability, paymentSettings })
       } catch {
         if (!cancelled) setLoadError('Não foi possível carregar a agenda. Tenta novamente.')
       } finally {
@@ -44,6 +46,8 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const services = ready ? data.services : []
   const bookings = ready ? data.bookings : []
   const selectedService = services.find((s) => s.id === serviceId)
+  const quote = selectedService && ready ? paymentQuote(selectedService.price_cents, data.paymentSettings) : null
+  const euro = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
   const weekday = new Date(`${selectedDate}T12:00:00Z`).getUTCDay()
   const closed = ready && data.availability.closures.some((period) => selectedDate >= period.start_date && selectedDate <= period.end_date)
   const periods = ready && !closed ? data.availability.weekly[weekday] : []
@@ -140,6 +144,9 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
           <label htmlFor="booking-time">Hora de início</label>
           <input id="booking-time" type="time" min={periods[0]?.start} max={periods.at(-1)?.end} step="60" value={startTime} onChange={(e) => setStartTime(e.target.value)} required disabled={busy} />
           {selectedService && <p>Termina às <strong>{endTime}</strong></p>}
+          {quote && <div className="payment-example"><strong>Regra de pagamento atual</strong>
+            <p>Total: {euro.format(quote.total_cents / 100)} · Online: {euro.format(quote.online_due_cents / 100)} · No local: {euro.format(quote.on_site_due_cents / 100)}</p>
+            <p>Esta marcação interna não efetua nem confirma qualquer pagamento.</p></div>}
           <div className="booking-form-actions">
             <button type="button" className="secondary-button" disabled={busy} onClick={() => { setShowForm(false); setError('') }}>Cancelar</button>
             <button type="submit" className="primary-button" disabled={!canManage || busy || !ready || !selectedService || periods.length === 0}>{busy ? 'A guardar...' : 'Guardar'}</button>

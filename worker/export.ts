@@ -8,11 +8,12 @@ export async function exportData(db: D1Database, account: Account): Promise<Resp
     db.prepare(`SELECT b.id, b.service_id, s.name AS service_name, b.customer_name, b.start_at, b.end_at, b.created_at
       FROM bookings b JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id
       WHERE b.organization_id = ? ORDER BY b.start_at, b.id`).bind(account.organization.id),
-    db.prepare('SELECT availability FROM organizations WHERE id = ?').bind(account.organization.id),
+    db.prepare('SELECT availability, booking_payment_settings FROM organizations WHERE id = ?').bind(account.organization.id),
   ])
   const exportedAt = new Date().toISOString()
   return new Response(JSON.stringify({ exported_at: exportedAt, account,
     availability: JSON.parse((availability.results[0] as { availability: string }).availability),
+    booking_payment_settings: JSON.parse((availability.results[0] as { booking_payment_settings: string }).booking_payment_settings),
     services: services.results, bookings: bookings.results }, null, 2), {
     headers: { 'Content-Type': 'application/json; charset=utf-8',
       'Content-Disposition': `attachment; filename="booking-data-${exportedAt.slice(0, 10)}.json"` },

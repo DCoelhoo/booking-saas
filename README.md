@@ -24,6 +24,9 @@ do negócio, ver uma pré-visualização e alterar a palavra-passe.
 Em **Horários, pausas e encerramentos**, configura os períodos de cada dia da semana,
 as pausas e os dias de férias/encerramento. A agenda usa esses horários para validar
 as marcações. Alterações incompatíveis com marcações ainda por concluir são recusadas.
+Em **Como os clientes pagam as marcações**, escolhe pagamento no local, total online
+ou sinal online (percentagem ou valor fixo). A configuração fica guardada para a
+futura página pública; a cobrança online ainda não está ativa. Ver [regras de pagamento](docs/booking-payments.md).
 
 Os emails de criação de conta, alteração de palavra-passe e novas marcações podem
 ser testados em **Definições → Emails locais — não enviados**. A alteração de

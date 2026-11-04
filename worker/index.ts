@@ -5,6 +5,7 @@ import { updateProfile } from './profile.ts'
 import { subscriptionRequired } from './subscriptions.ts'
 import { exportData } from './export.ts'
 import { handleAvailability } from './availability.ts'
+import { handleBookingPaymentSettings, servicePaymentQuote } from './bookingPayments.ts'
 import { handleBookings } from './bookings.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
@@ -20,6 +21,12 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/booking-payment-settings') {
+      if (request.method !== 'GET' && !account.subscription.can_manage) return subscriptionRequired()
+      return handleBookingPaymentSettings(request, env.booking_saas_db, organizationId)
+    }
+    const quoteMatch = url.pathname.match(/^\/api\/services\/([^/]+)\/payment-quote$/)
+    if (quoteMatch && request.method === 'GET') return servicePaymentQuote(env.booking_saas_db, organizationId, quoteMatch[1], account.subscription.can_manage)
     if (url.pathname === '/api/email-previews' && request.method === 'GET') return previewEmails(request, env, organizationId)
     if (url.pathname === '/api/availability') {
       if (request.method !== 'GET' && !account.subscription.can_manage) return subscriptionRequired()

@@ -21,7 +21,7 @@ test('email events are isolated, password links expire and jobs survive delivery
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     const db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql', '0004_availability.sql', '0005_email_notifications.sql', '0006_booking_payment_settings.sql']) {
       const sql = await readFile(`migrations/${file}`, 'utf8')
       for (const statement of sql.split(';').filter((s) => s.trim())) await db.prepare(statement).run()
     }

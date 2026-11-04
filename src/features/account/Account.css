@@ -91,6 +91,11 @@
 .email-previews summary { cursor: pointer; font-size: 18px; font-weight: 600; }
 .email-previews article { border-top: 1px solid #e7eaf0; margin-top: 16px; padding-top: 12px; }
 .email-previews pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.6; }
+.booking-payment-settings summary { cursor: pointer; font-size: 18px; font-weight: 600; }
+.account-form .payment-choice { display: flex; align-items: center; gap: 10px; }
+.account-form .payment-choice input { width: 20px; min-height: 20px; flex-shrink: 0; }
+.booking-payment-settings select { min-height: 46px; border: 1px solid #dce2ec; border-radius: 9px; padding: 10px; font: inherit; background: white; }
+.payment-example { padding: 14px; margin-top: 16px; border: 1px solid #dce2ec; border-radius: 9px; }
 @media (max-width: 600px) {
   .availability-day { flex-direction: column; }
   .availability-periods { width: 100%; }

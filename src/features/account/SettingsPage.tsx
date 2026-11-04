@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { accountRequest, type Account } from './accountApi'
 import AvailabilitySettings from './AvailabilitySettings'
 import EmailPreviews from './EmailPreviews'
+import BookingPaymentSettings from './BookingPaymentSettings'
 
 export default function SettingsPage({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [profile, setProfile] = useState({ ...account.organization, full_name: account.user.full_name })
@@ -65,6 +66,7 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
       <button type="button" className="secondary-button" disabled={busy} onClick={() => void exportAccount()}>Exportar os meus dados (JSON)</button>
     </section>
     <AvailabilitySettings canManage={canManage} />
+    <BookingPaymentSettings canManage={canManage} />
     <div className="settings-grid">
       <form className="account-form panel" onSubmit={save}>
         <h2>Conta e negócio</h2>
