@@ -4,6 +4,8 @@ import {
   getServices,
   createService,
   updateService,
+  previewDuration,
+  type DurationPreview,
   type Service,
 } from './servicesApi'
 import './ServicesPage.css'
@@ -24,6 +26,8 @@ export default function ServicesPage() {
   const [name, setName] = useState('')
   const [duration, setDuration] = useState('30')
   const [price, setPrice] = useState('')
+  const [applyToFuture, setApplyToFuture] = useState(false)
+  const [preview, setPreview] = useState<DurationPreview | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -54,6 +58,8 @@ export default function ServicesPage() {
   }, [])
 
   function resetForm() {
+    setApplyToFuture(false)
+    setPreview(null)
     setEditingId(null)
     setName('')
     setDuration('30')
@@ -63,6 +69,8 @@ export default function ServicesPage() {
   }
 
   function editService(service: Service) {
+    setApplyToFuture(false)
+    setPreview(null)
     setEditingId(service.id)
     setName(service.name)
     setDuration(String(service.duration_minutes))
@@ -119,21 +127,32 @@ export default function ServicesPage() {
     setFormError('')
 
     try {
+      if (editingId && applyToFuture && !preview) {
+        setPreview(await previewDuration(editingId, durationMinutes))
+        return
+      }
+      if (applyToFuture && preview?.has_conflicts) return
       const input = {
         name: name.trim(),
         duration_minutes: durationMinutes,
         price_cents: priceCents,
+        ...(editingId && applyToFuture && preview ? {
+          apply_to_future_bookings: true, bookings_snapshot: preview.snapshot,
+        } : {}),
       }
       const savedService = editingId
         ? await updateService(editingId, input)
         : await createService(input)
 
       storeService(savedService)
-      setNotice(editingId ? 'Serviço atualizado com sucesso.' : 'Serviço criado com sucesso.')
+      setNotice(editingId ? applyToFuture
+        ? `Serviço e ${preview?.bookings.length ?? 0} marcações futuras atualizados com sucesso.`
+        : 'Serviço atualizado com sucesso.' : 'Serviço criado com sucesso.')
 
       resetForm()
-    } catch {
-      setFormError('Não foi possível guardar o serviço.')
+    } catch (cause) {
+      setPreview(null)
+      setFormError(cause instanceof Error ? cause.message : 'Não foi possível guardar o serviço.')
     } finally {
       setSaving(false)
     }
@@ -186,10 +205,38 @@ export default function ServicesPage() {
             min="1"
             step="1"
             value={duration}
-            onChange={(event) => setDuration(event.target.value)}
+            onChange={(event) => { setDuration(event.target.value); setPreview(null) }}
             required
             disabled={saving}
           />
+
+          {editingId && (
+            <>
+              <label className="future-bookings-option">
+                <input type="checkbox" checked={applyToFuture} disabled={saving}
+                  onChange={(event) => { setApplyToFuture(event.target.checked); setPreview(null); setFormError('') }} />
+                Aplicar a duração às marcações futuras
+              </label>
+              <p>O início mantém-se. Só é alterada a hora de fim das marcações que ainda não começaram.
+                Sem esta opção, a nova duração aplica-se apenas a novas marcações.</p>
+            </>
+          )}
+
+          {preview && (
+            <div className="duration-preview" aria-live="polite">
+              <strong>{preview.bookings.length} marcações futuras a atualizar</strong>
+              {preview.has_conflicts ? (
+                <p className="booking-error" role="alert">A alteração provoca sobreposições ou ultrapassa o horário das 09:00 às 18:00.
+                  Ajusta a duração ou desmarca a opção para guardar apenas o serviço.</p>
+              ) : <p>Sem conflitos. Confirma abaixo para guardar o serviço e atualizar estas marcações.</p>}
+              <ul>
+                {preview.bookings.map((booking) => <li key={booking.id}>
+                  {booking.customer_name} · {booking.start_at.slice(0, 10)} às {booking.start_at.slice(11, 16)}:
+                  {' '}fim {booking.end_at.slice(11, 16)} → {booking.proposed_end?.slice(11, 16) ?? 'inválido'}
+                </li>)}
+              </ul>
+            </div>
+          )}
 
           <label htmlFor="service-price">Preço (€)</label>
           <input
@@ -231,9 +278,10 @@ export default function ServicesPage() {
             <button
               type="submit"
               className="primary-button"
-              disabled={saving || updatingId !== null}
+              disabled={saving || updatingId !== null || (applyToFuture && !!preview?.has_conflicts)}
             >
-              {saving ? 'A guardar...' : 'Guardar serviço'}
+              {saving ? 'A processar...' : applyToFuture
+                ? preview ? 'Confirmar alterações' : 'Verificar marcações' : 'Guardar serviço'}
             </button>
           </div>
         </form>

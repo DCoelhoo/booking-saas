@@ -32,6 +32,23 @@ export type CreateServiceInput = {
 
 export type UpdateServiceInput = Partial<CreateServiceInput> & {
   is_active?: 0 | 1
+  apply_to_future_bookings?: boolean
+  bookings_snapshot?: string
+}
+
+export type DurationPreview = {
+  bookings: { id: string; customer_name: string; start_at: string; end_at: string; proposed_end: string | null }[]
+  snapshot: string
+  has_conflicts: boolean
+}
+
+export async function previewDuration(id: string, duration: number): Promise<DurationPreview> {
+  const response = await fetch(`/api/services/${encodeURIComponent(id)}/duration-preview`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ duration_minutes: duration }),
+  })
+  if (!response.ok) throw new Error('Não foi possível verificar as marcações.')
+  return response.json()
 }
 
 export async function updateService(id: string, input: UpdateServiceInput): Promise<Service> {
@@ -42,7 +59,8 @@ export async function updateService(id: string, input: UpdateServiceInput): Prom
   })
 
   if (!response.ok) {
-    throw new Error('Não foi possível atualizar o serviço.')
+    const data = await response.json().catch(() => null)
+    throw new Error(data?.error || 'Não foi possível atualizar o serviço.')
   }
 
   return (await response.json()) as Service

@@ -1,5 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { handleBookings } from './bookings.ts'
+import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
 interface Env {
   booking_saas_db: D1Database
@@ -8,6 +9,10 @@ interface Env {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
+    const previewMatch = url.pathname.match(/^\/api\/services\/([^/]+)\/duration-preview$/)
+    if (previewMatch && request.method === 'POST') {
+      return previewDuration(request, env.booking_saas_db, previewMatch[1])
+    }
     const bookingsResponse = await handleBookings(request, env.booking_saas_db)
     if (bookingsResponse) return bookingsResponse
 
@@ -145,13 +150,14 @@ export default {
 
       const updates: string[] = []
       const values: (string | number)[] = []
-      const allowedFields = ['name', 'duration_minutes', 'price_cents', 'is_active']
+      const allowedFields = ['name', 'duration_minutes', 'price_cents', 'is_active', 'apply_to_future_bookings', 'bookings_snapshot']
 
       if (Object.keys(body).some((key) => !allowedFields.includes(key))) {
         return Response.json({ error: 'Campos não permitidos.' }, { status: 400 })
       }
 
       for (const [key, value] of Object.entries(body)) {
+        if (key === 'apply_to_future_bookings' || key === 'bookings_snapshot') continue
         const valid = key === 'name'
           ? typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 100
           : key === 'is_active'
@@ -172,6 +178,39 @@ export default {
       }
 
       try {
+        const options = body as Record<string, unknown>
+        if (options.apply_to_future_bookings !== undefined && typeof options.apply_to_future_bookings !== 'boolean') {
+          return Response.json({ error: 'Opção inválida.' }, { status: 400 })
+        }
+        if (options.apply_to_future_bookings === true) {
+          if (typeof options.duration_minutes !== 'number' || typeof options.bookings_snapshot !== 'string') {
+            return Response.json({ error: 'Verifica as marcações antes de confirmar.' }, { status: 400 })
+          }
+          const id = serviceMatch[1]
+          const now = businessNow()
+          const db = env.booking_saas_db
+          if (!await db.prepare('SELECT id FROM services WHERE id = ? AND organization_id = ?').bind(id, 'org-demo').first()) {
+            return Response.json({ error: 'Serviço não encontrado.' }, { status: 404 })
+          }
+          // D1 batches run transactionally. The first statement guards the whole update;
+          // changes() lets the second statement proceed only when the guard succeeded.
+          const [updated] = await db.batch([
+            db.prepare(`${projection} UPDATE services SET ${updates.join(', ')}
+              WHERE id = ? AND organization_id = ?
+                AND ${snapshot} = ? AND NOT ${conflictCondition}
+              RETURNING id, name, duration_minutes, price_cents, is_active`)
+              .bind(...projectionValues(id, now, options.duration_minutes), ...values, id, 'org-demo', options.bookings_snapshot),
+            db.prepare(`UPDATE bookings
+              SET end_at = strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes')
+              WHERE changes() = 1 AND organization_id = ? AND service_id = ?
+                AND julianday(start_at) > julianday(?)`)
+              .bind(options.duration_minutes, 'org-demo', id, now),
+          ])
+          if (!updated.results.length) {
+            return Response.json({ error: 'Existem conflitos ou a agenda mudou. Verifica novamente antes de confirmar.' }, { status: 409 })
+          }
+          return Response.json(updated.results[0])
+        }
         const service = await env.booking_saas_db
           .prepare(`
             UPDATE services

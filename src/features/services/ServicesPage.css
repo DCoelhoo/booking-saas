@@ -66,6 +66,31 @@
   font-size: 16px;
 }
 
+.service-form .future-bookings-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.service-form .future-bookings-option input {
+  width: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
+}
+
+.duration-preview {
+  border: 1px solid #dce2ec;
+  border-radius: 9px;
+  padding: 12px;
+}
+
+.duration-preview ul {
+  max-height: 240px;
+  overflow-y: auto;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;

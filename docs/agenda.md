@@ -12,6 +12,12 @@ Fusos horários, horários configuráveis e recursos independentes são etapas f
 O backend calcula o fim a partir do serviço ativo. A verificação de sobreposição
 e a inserção acontecem numa única instrução SQL. Marcações adjacentes são permitidas.
 Alterar a duração de um serviço não altera o início ou fim de marcações existentes.
+Na edição do serviço, a opção «Aplicar a duração às marcações futuras» permite
+pré-visualizar e confirmar a alteração das horas de fim. São incluídas apenas
+marcações que ainda não começaram, usando a hora atual de Europe/Lisbon.
+A confirmação revalida a agenda e o horário de funcionamento e aplica o serviço
+e as marcações numa transação. Se as marcações afetadas mudarem desde a revisão,
+ou surgirem conflitos, a operação inteira é recusada com HTTP 409.
 Os nomes dos serviços apresentados correspondem ao nome atual do serviço.
 
 O negócio continua fixo em `org-demo`; a autenticação e a seleção segura do negócio
