@@ -30,6 +30,24 @@ export type CreateServiceInput = {
   price_cents: number
 }
 
+export type UpdateServiceInput = Partial<CreateServiceInput> & {
+  is_active?: 0 | 1
+}
+
+export async function updateService(id: string, input: UpdateServiceInput): Promise<Service> {
+  const response = await fetch(`/api/services/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+
+  if (!response.ok) {
+    throw new Error('Não foi possível atualizar o serviço.')
+  }
+
+  return (await response.json()) as Service
+}
+
 export async function createService(
   input: CreateServiceInput
 ): Promise<Service> {

@@ -118,8 +118,30 @@
   cursor: pointer;
 }
 
-.service-actions .delete-button {
-  color: #bf3344;
+.service-info .service-status {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.service-status.is-active {
+  background: #eef2ff;
+  color: #315cf5;
+}
+
+.service-status.is-inactive {
+  background: #e7eaf0;
+  color: #172033;
+}
+
+.services-page button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.service-actions button {
+  padding: 10px 16px;
 }
 
 @media (min-width: 768px) {

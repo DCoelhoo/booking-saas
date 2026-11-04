@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import {
   getServices,
   createService,
+  updateService,
   type Service,
 } from './servicesApi'
 import './ServicesPage.css'
@@ -15,6 +16,10 @@ export default function ServicesPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const [name, setName] = useState('')
   const [duration, setDuration] = useState('30')
@@ -49,6 +54,7 @@ export default function ServicesPage() {
   }, [])
 
   function resetForm() {
+    setEditingId(null)
     setName('')
     setDuration('30')
     setPrice('')
@@ -56,10 +62,41 @@ export default function ServicesPage() {
     setShowForm(false)
   }
 
+  function editService(service: Service) {
+    setEditingId(service.id)
+    setName(service.name)
+    setDuration(String(service.duration_minutes))
+    setPrice((service.price_cents / 100).toFixed(2))
+    setFormError('')
+    setNotice('')
+    setShowForm(true)
+  }
+
+  function storeService(service: Service) {
+    setServices((current) => [...current.filter((item) => item.id !== service.id), service]
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt')))
+  }
+
+  async function toggleService(service: Service) {
+    if (updatingId || saving) return
+    setUpdatingId(service.id)
+    setActionError('')
+    setNotice('')
+    try {
+      const updated = await updateService(service.id, { is_active: service.is_active === 1 ? 0 : 1 })
+      storeService(updated)
+      setNotice(`Serviço ${updated.is_active === 1 ? 'reativado' : 'desativado'} com sucesso.`)
+    } catch {
+      setActionError('Não foi possível alterar o estado do serviço. Tenta novamente.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (saving) return
+    if (saving || updatingId) return
 
     const durationMinutes = Number(duration)
     const priceValue = Number(price)
@@ -68,7 +105,7 @@ export default function ServicesPage() {
     if (
       !name.trim() ||
       name.trim().length > 100 ||
-      !Number.isInteger(durationMinutes) ||
+      !Number.isSafeInteger(durationMinutes) ||
       durationMinutes <= 0 ||
       !Number.isFinite(priceValue) ||
       priceValue < 0 ||
@@ -82,17 +119,17 @@ export default function ServicesPage() {
     setFormError('')
 
     try {
-      const newService = await createService({
+      const input = {
         name: name.trim(),
         duration_minutes: durationMinutes,
         price_cents: priceCents,
-      })
+      }
+      const savedService = editingId
+        ? await updateService(editingId, input)
+        : await createService(input)
 
-      setServices((current) =>
-        [...current, newService].sort((a, b) =>
-          a.name.localeCompare(b.name, 'pt')
-        )
-      )
+      storeService(savedService)
+      setNotice(editingId ? 'Serviço atualizado com sucesso.' : 'Serviço criado com sucesso.')
 
       resetForm()
     } catch {
@@ -118,8 +155,8 @@ export default function ServicesPage() {
         <button
           type="button"
           className="primary-button"
-          onClick={() => setShowForm(true)}
-          disabled={showForm}
+          onClick={() => { resetForm(); setNotice(''); setShowForm(true) }}
+          disabled={showForm || updatingId !== null || loading || !!error}
         >
           + Novo serviço
         </button>
@@ -127,7 +164,7 @@ export default function ServicesPage() {
 
       {showForm && (
         <form className="service-form" onSubmit={handleSubmit}>
-          <h2>Novo serviço</h2>
+          <h2>{editingId ? 'Editar serviço' : 'Novo serviço'}</h2>
 
           <label htmlFor="service-name">Nome do serviço</label>
           <input
@@ -137,6 +174,7 @@ export default function ServicesPage() {
             placeholder="Ex.: Massagem relaxante"
             maxLength={100}
             required
+            disabled={saving}
           />
 
           <label htmlFor="service-duration">
@@ -150,6 +188,7 @@ export default function ServicesPage() {
             value={duration}
             onChange={(event) => setDuration(event.target.value)}
             required
+            disabled={saving}
           />
 
           <label htmlFor="service-price">Preço (€)</label>
@@ -162,6 +201,7 @@ export default function ServicesPage() {
             onChange={(event) => setPrice(event.target.value)}
             placeholder="15.00"
             required
+            disabled={saving}
           />
 
           {formError && (
@@ -175,7 +215,7 @@ export default function ServicesPage() {
               type="button"
               className="secondary-button"
               onClick={resetForm}
-              disabled={saving}
+              disabled={saving || updatingId !== null}
             >
               Cancelar
             </button>
@@ -183,13 +223,16 @@ export default function ServicesPage() {
             <button
               type="submit"
               className="primary-button"
-              disabled={saving}
+              disabled={saving || updatingId !== null}
             >
               {saving ? 'A guardar...' : 'Guardar serviço'}
             </button>
           </div>
         </form>
       )}
+
+      {notice && <p role="status">{notice}</p>}
+      {actionError && <p className="booking-error" role="alert">{actionError}</p>}
 
       <div className="service-list">
         {loading && <p>A carregar serviços...</p>}
@@ -207,11 +250,27 @@ export default function ServicesPage() {
             <div className="service-info">
               <strong>{service.name}</strong>
 
+              <span className={`service-status ${service.is_active === 1 ? 'is-active' : 'is-inactive'}`}>
+                {service.is_active === 1 ? 'Ativo' : 'Inativo'}
+              </span>
+
               <span>{service.duration_minutes} minutos</span>
 
               <strong className="service-price">
                 {euro.format(service.price_cents / 100)}
               </strong>
+            </div>
+            <div className="service-actions">
+              <button type="button" onClick={() => editService(service)}
+                disabled={showForm || saving || updatingId !== null}
+                aria-label={`Editar ${service.name}`}>
+                Editar
+              </button>
+              <button type="button" onClick={() => void toggleService(service)}
+                disabled={showForm || saving || updatingId !== null}
+                aria-label={`${service.is_active === 1 ? 'Desativar' : 'Reativar'} ${service.name}`}>
+                {updatingId === service.id ? 'A guardar...' : service.is_active === 1 ? 'Desativar' : 'Reativar'}
+              </button>
             </div>
           </article>
         ))}
