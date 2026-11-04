@@ -9,7 +9,7 @@ export default function SubscriptionBanner({ subscription, onViewPlan }: {
     <div>
       <strong>{subscription.status === 'active' ? 'Subscrição ativa' : subscription.status === 'trialing'
         ? `Tens ${subscription.days_remaining} ${subscription.days_remaining === 1 ? 'dia' : 'dias'} de teste` : 'O período de teste terminou'}</strong>
-      <p>{subscription.can_manage ? `Acesso até ${ends}.` : 'Podes consultar, cancelar marcações existentes e exportar os teus dados.'}</p>
+      <p>{subscription.can_manage ? `Acesso até ${ends}.` : 'Podes consultar os teus dados e cancelar marcações existentes.'}</p>
     </div>
     <button type="button" className="secondary-button" onClick={onViewPlan}>Ver plano</button>
   </section>

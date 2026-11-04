@@ -9,13 +9,22 @@ ou editar o perfil não reinicia nem prolonga o teste.
 
 A API calcula o acesso a cada pedido. Depois do teste e sem um período pago
 válido, ficam bloqueados a criação de marcações, a edição de serviços e a
-personalização do negócio. Permanecem disponíveis a consulta, a eliminação de
+personalização do negócio. Permanecem disponíveis a consulta, o cancelamento de
 marcações existentes, os dados pessoais da conta, a alteração de palavra-passe,
 o fim de sessão e a exportação JSON de todos os serviços e marcações do negócio.
 
 `GET /api/subscription` devolve o estado efetivo. `GET /api/export` exporta os
 dados do negócio autenticado. Campos de subscrição não são editáveis pelo cliente.
 Operações bloqueadas devolvem HTTP 402 com `code: SUBSCRIPTION_REQUIRED`.
+
+O botão de exportação JSON foi retirado das Definições; o endpoint autenticado
+mantém-se disponível. A área «Faturas da subscrição» refere-se exclusivamente à
+mensalidade do SaaS. A emissão de faturas dos serviços prestados aos clientes é
+responsabilidade de cada negócio e fica fora do âmbito da aplicação.
+
+A área de faturas mostra que a consulta e o download ainda não estão disponíveis.
+O histórico e os documentos reais dependem da integração de cobrança e faturação
+da subscrição; não são geradas faturas simuladas a partir do estado do plano.
 
 Um período pago só concede acesso até `paid_until` e apenas com estado `active`
 ou `canceled` (cancelamento com acesso até ao fim do período pago). Não existe
@@ -48,6 +57,5 @@ tratar confirmações assíncronas e notificações duplicadas e só conceder ac
 pago após confirmação autenticada pelo fornecedor. Até lá, a interface indica
 que os pagamentos estarão disponíveis em breve.
 
-A página pública de marcações ainda não existe. Quando for implementada, deve
-verificar o mesmo acesso e mostrar apenas indisponibilidade temporária ao cliente
-final, sem expor o estado financeiro do negócio.
+A página pública de marcações verifica o mesmo acesso e mostra apenas
+indisponibilidade temporária ao cliente final, sem expor o estado financeiro do negócio.

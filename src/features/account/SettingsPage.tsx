@@ -42,29 +42,17 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
 
   function field(key: keyof typeof profile, value: string) { setProfile((current) => ({ ...current, [key]: value })) }
 
-  async function exportAccount() {
-    if (busy) return
-    setBusy(true); setError(''); setMessage('')
-    try {
-      const data = await accountRequest<unknown>('export')
-      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = `dados-${account.organization.slug}.json`
-      anchor.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setMessage('Exportação preparada com sucesso.')
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível exportar os dados.') }
-    finally { setBusy(false) }
-  }
-
   return <div className="settings-page">
     <section className="panel" aria-label="Plano e subscrição">
       <h2>O teu plano · 10 €/mês por negócio</h2>
       <p>{account.subscription.status === 'trialing' ? `Estás a experimentar a aplicação. Restam ${account.subscription.days_remaining} dias de teste.`
-        : canManage ? 'A tua subscrição está ativa.' : 'O período de teste terminou. A consulta e a exportação dos dados continuam disponíveis.'}</p>
+        : canManage ? 'A tua subscrição está ativa.' : 'O período de teste terminou. Podes continuar a consultar os teus dados e cancelar marcações existentes.'}</p>
       <p>Os pagamentos estarão disponíveis em breve. Não são efetuadas cobranças automáticas durante o teste.</p>
-      <button type="button" className="secondary-button" disabled={busy} onClick={() => void exportAccount()}>Exportar os meus dados (JSON)</button>
+    </section>
+    <section className="panel" aria-label="Faturação da subscrição">
+      <h2>Faturas da subscrição</h2>
+      <p>As faturas da mensalidade do Booking SaaS ficarão disponíveis nesta área quando a cobrança da subscrição estiver ativa.</p>
+      <p>A consulta e o download das faturas ainda não estão disponíveis.</p>
     </section>
     <AvailabilitySettings canManage={canManage} />
     <BookingPaymentSettings canManage={canManage} />
