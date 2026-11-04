@@ -79,7 +79,7 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
     assert.equal((await request('auth/logout', 'POST', {}, cookieA, { 'Content-Type': 'text/plain' })).status, 415)
     const profile = { ...accountA.organization, full_name: 'Diogo Novo', name: 'Novo Negócio', slug: 'novo-negocio',
       description: 'Marcações para todos.', contact_email: 'contacto@example.com', phone: '+351 900 000 000',
-      brand_color: '#224466', logo_url: 'https://example.com/logo.png' }
+      brand_color: '#224466' }
     assert.equal((await request('profile', 'PATCH', { ...profile, slug: 'negocio-dois' }, cookieA)).status, 409)
     assert.equal((await request('profile', 'PATCH', { ...profile, logo_url: 'javascript:alert(1)' }, cookieA)).status, 400)
     const updated = await request('profile', 'PATCH', profile, cookieA)

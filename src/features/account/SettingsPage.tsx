@@ -87,17 +87,13 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
           <input id="profile-phone" type="tel" value={profile.phone} onChange={(e) => field('phone', e.target.value)} maxLength={40} />
           <label htmlFor="profile-color">Cor principal</label>
           <input id="profile-color" type="color" value={profile.brand_color} onChange={(e) => field('brand_color', e.target.value)} />
-          <label htmlFor="profile-logo">Logótipo alternativo por URL (opcional, HTTPS)</label>
-          <input id="profile-logo" type="url" placeholder="https://exemplo.pt/logotipo.png" value={profile.logo_url}
-            onChange={(e) => field('logo_url', e.target.value)} maxLength={2048} />
-          <small>Usado quando não envias uma fotografia de perfil do estabelecimento.</small>
           </fieldset>
           <button type="submit" className="primary-button">{busy ? 'A processar...' : 'Guardar perfil'}</button>
         </fieldset>
       </form>
       <aside className="profile-preview panel" aria-label="Pré-visualização do negócio" style={{ borderTop: `6px solid ${profile.brand_color}` }}>
         <span className="eyebrow">Pré-visualização</span>
-        {(account.organization.profile_photo_url || profile.logo_url.startsWith('https://')) && <img key={account.organization.profile_photo_url || profile.logo_url} src={account.organization.profile_photo_url || profile.logo_url} alt="Logótipo do negócio" referrerPolicy="no-referrer"
+        {account.organization.profile_photo_url && <img key={account.organization.profile_photo_url} src={account.organization.profile_photo_url} alt="Logótipo do negócio" referrerPolicy="no-referrer"
           onError={(event) => { event.currentTarget.hidden = true }} />}
         <h2>{profile.name || 'O teu negócio'}</h2>
         <p>Escolhe um colaborador e faz a tua marcação.</p>

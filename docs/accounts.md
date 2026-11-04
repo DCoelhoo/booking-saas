@@ -15,7 +15,7 @@ Os dados de `org-demo` mantêm-se intactos, sem atribuição automática de prop
 - `POST /api/auth/password/confirm`: `token`, `new_password`; consome o link e
   invalida todas as sessões. O utilizador volta a iniciar sessão.
 - `PATCH /api/profile`: `full_name`, `name`, `slug`, `description`, `contact_email`,
-  `phone`, `brand_color`, `logo_url`.
+  `phone`, `brand_color`.
 
 Serviços, agenda e pré-visualização de durações exigem sessão e filtram os dados
 pelo negócio da conta. O cliente não consegue escolher outra organização.

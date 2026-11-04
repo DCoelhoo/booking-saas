@@ -8,7 +8,7 @@ export type Account = {
   user: { id: string; email: string; full_name: string; role: 'owner' | 'staff'; staff_id: string | null; photo_url: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
-    phone: string; brand_color: string; logo_url: string; cover_url: string; profile_photo_url: string
+    phone: string; brand_color: string; cover_url: string; profile_photo_url: string
   }
 }
 

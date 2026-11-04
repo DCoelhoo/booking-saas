@@ -69,5 +69,5 @@ imagens. O envio exige teste/subscrição ativa; a remoção continua disponíve
 depois da expiração. A substituição também protege contra alterações concorrentes.
 
 Sem capa, a página mostra um fundo com a cor do negócio. Sem fotografia de perfil,
-usa o logótipo HTTPS existente ou as iniciais. A apresentação pública mostra apenas
+mostra as iniciais. As imagens são adicionadas exclusivamente por upload. A apresentação pública mostra apenas
 o nome, os contactos recolhidos numa secção expansível e o formulário de marcação.

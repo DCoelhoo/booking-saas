@@ -22,7 +22,7 @@ export default function BusinessPhotos({account,onChange}:{account:Account;onCha
   return <section className="panel business-photos" aria-label="Imagens do estabelecimento">
     <h2>Imagens do estabelecimento</h2><p>Personaliza a capa e a fotografia circular da tua página de marcações.</p>
     <div className="business-photo-preview"><div className="business-cover-preview">{account.organization.cover_url && <img src={account.organization.cover_url} alt="Capa do estabelecimento" />}</div>
-      <div className="business-avatar-preview">{(account.organization.profile_photo_url || account.organization.logo_url)?<img src={account.organization.profile_photo_url || account.organization.logo_url} alt="Fotografia do estabelecimento" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.hidden=true}} />:<span>{account.organization.name.slice(0,1)}</span>}</div>
+      <div className="business-avatar-preview">{(account.organization.profile_photo_url)?<img src={account.organization.profile_photo_url} alt="Fotografia do estabelecimento" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.hidden=true}} />:<span>{account.organization.name.slice(0,1)}</span>}</div>
     </div>
     {(['cover','profile'] as const).map(kind=><div className="business-photo-control" key={kind}>
       <label htmlFor={`business-photo-${kind}`}>{kind==='cover'?'Fotografia de capa (opcional)':'Fotografia de perfil do estabelecimento'}</label>

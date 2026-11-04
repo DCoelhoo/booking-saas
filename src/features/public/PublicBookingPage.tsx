@@ -5,7 +5,7 @@ import Avatar from '../account/Avatar'
 
 type Service = { id: string; name: string; duration_minutes: number; price_cents: number; payment: ReturnType<typeof paymentQuote> }
 type PageData = {
-  business: { name: string; slug: string; description: string; contact_email: string; phone: string; logo_url: string; cover_url: string; profile_photo_url: string; brand_color: string }
+  business: { name: string; slug: string; description: string; contact_email: string; phone: string; cover_url: string; profile_photo_url: string; brand_color: string }
   available: boolean; today: string; max_date: string; time_zone: string; services: Service[]; staff: {id:string;name:string;photo_url:string}[]; change_hours: number
 }
 type Slot = { start_time: string; end_time: string }
@@ -110,7 +110,7 @@ export default function PublicBookingPage({ slug, preview = false }: { slug: str
   return <div className="public-booking" style={{ '--public-brand': business.brand_color, '--public-ink': brandInk(business.brand_color) } as CSSProperties}>
     <section className="public-identity" aria-label="O estabelecimento">
       <div className="public-cover">{business.cover_url && <img key={business.cover_url} src={business.cover_url} alt="" onError={event=>{event.currentTarget.hidden=true}} />}</div>
-      <div className="public-business-avatar"><span aria-hidden="true">{initials}</span>{(business.profile_photo_url || business.logo_url) && <img key={business.profile_photo_url || business.logo_url} src={business.profile_photo_url || business.logo_url} alt={`Fotografia de ${business.name}`} referrerPolicy="no-referrer" onError={event=>{event.currentTarget.hidden=true}} />}</div>
+      <div className="public-business-avatar"><span aria-hidden="true">{initials}</span>{(business.profile_photo_url) && <img key={business.profile_photo_url} src={business.profile_photo_url} alt={`Fotografia de ${business.name}`} referrerPolicy="no-referrer" onError={event=>{event.currentTarget.hidden=true}} />}</div>
       <h1>{business.name}</h1>
       {(business.contact_email || business.phone) && <details className="public-contact"><summary>Contactos</summary>
         {business.contact_email && <a href={`mailto:${business.contact_email}`} onClick={preview?event=>event.preventDefault():undefined}>{business.contact_email}</a>}
