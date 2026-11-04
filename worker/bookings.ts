@@ -1,6 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
 
-const organizationId = 'org-demo'
 const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, s.name AS service_name`
 
 function validDate(value: unknown): value is string {
@@ -9,7 +8,7 @@ function validDate(value: unknown): value is string {
     new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
 }
 
-export async function handleBookings(request: Request, db: D1Database): Promise<Response | null> {
+export async function handleBookings(request: Request, db: D1Database, organizationId: string): Promise<Response | null> {
   const url = new URL(request.url)
   const match = url.pathname.match(/^\/api\/bookings\/([^/]+)$/)
   if (url.pathname !== '/api/bookings' && !match) return null

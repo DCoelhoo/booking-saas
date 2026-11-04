@@ -20,8 +20,9 @@ e as marcações numa transação. Se as marcações afetadas mudarem desde a re
 ou surgirem conflitos, a operação inteira é recusada com HTTP 409.
 Os nomes dos serviços apresentados correspondem ao nome atual do serviço.
 
-O negócio continua fixo em `org-demo`; a autenticação e a seleção segura do negócio
-ainda têm de ser implementadas antes de disponibilizar a gestão publicamente.
+Os endpoints de gestão exigem sessão. O negócio é obtido a partir da conta
+autenticada; identificadores enviados pelo cliente não escolhem a organização.
+Os dados antigos de `org-demo` mantêm-se separados das novas contas.
 
 Executar `npm test` faz o build e testa serviços e agenda numa D1 local isolada,
 incluindo persistência após reinício, concorrência, serviços inativos e âmbito da organização.

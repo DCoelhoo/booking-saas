@@ -3,6 +3,9 @@ import { useState } from 'react'
 import './App.css'
 import ServicesPage from './features/services/ServicesPage'
 import BookingsPage from './features/bookings/BookingsPage'
+import SettingsPage from './features/account/SettingsPage'
+import DashboardPage from './features/account/DashboardPage'
+import type { Account } from './features/account/accountApi'
 
 type Page =
   | 'Dashboard'
@@ -10,13 +13,6 @@ type Page =
   | 'Serviços'
   | 'Clientes'
   | 'Definições'
-
-type Booking = {
-  id: number
-  customer: string
-  service: string
-  time: string
-}
 
 const navigation: { page: Page; label: string; icon: string }[] = [
   { page: 'Dashboard', label: 'Início', icon: '⌂' },
@@ -26,21 +22,19 @@ const navigation: { page: Page; label: string; icon: string }[] = [
   { page: 'Definições', label: 'Mais', icon: '☰' },
 ]
 
-const bookings: Booking[] = [
-  { id: 1, customer: 'João Silva', service: 'Serviço A', time: '09:30' },
-  { id: 2, customer: 'Maria Costa', service: 'Serviço B', time: '10:00' },
-  { id: 3, customer: 'Pedro Santos', service: 'Serviço A', time: '11:30' },
-]
-
-const stats = [
-  { label: 'Marcações hoje', value: '12' },
-  { label: 'Esta semana', value: '48' },
-  { label: 'Serviços ativos', value: '5' },
-  { label: 'Receita hoje', value: '230 €' },
-]
-
-function App() {
+function App({ account, onAccountChange, onLogout }: {
+  account: Account; onAccountChange: (account: Account) => void; onLogout: () => Promise<void>
+}) {
   const [activePage, setActivePage] = useState<Page>('Dashboard')
+  const [logoutBusy, setLogoutBusy] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
+  const initials = account.organization.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+  async function logout() {
+    if (logoutBusy) return
+    setLogoutBusy(true); setLogoutError('')
+    try { await onLogout() } catch { setLogoutError('Não foi possível terminar a sessão. Tenta novamente.') }
+    finally { setLogoutBusy(false) }
+  }
 
   return (
     <div className="app-layout">
@@ -65,10 +59,10 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="avatar">DN</div>
+          <div className="avatar">{initials}</div>
           <div>
-            <strong>O meu negócio</strong>
-            <small>Plano Essencial</small>
+            <strong>{account.organization.name}</strong>
+            <small>{account.user.email}</small>
           </div>
         </div>
       </aside>
@@ -76,51 +70,24 @@ function App() {
       <main className="main-content">
         <header className="topbar">
           <div>
-            <span className="eyebrow">O meu negócio</span>
+            <span className="eyebrow">{account.organization.name}</span>
             <h1>{activePage}</h1>
           </div>
-          <div className="user-avatar" aria-label="Perfil do negócio">DN</div>
+          <div className="topbar-actions">
+            <div className="user-avatar" aria-label="Perfil do negócio">{initials}</div>
+            <button type="button" className="logout-button" disabled={logoutBusy} onClick={() => void logout()}>{logoutBusy ? 'A sair...' : 'Sair'}</button>
+          </div>
         </header>
 
+        {logoutError && <p className="booking-error" role="alert">{logoutError}</p>}
         {activePage === 'Dashboard' ? (
-          <div className="dashboard">
-            <section className="welcome">
-              <h2>Bem-vindo!</h2>
-              <p>Consulta as tuas próximas marcações.</p>
-            </section>
-
-            <section className="stats-grid" aria-label="Estatísticas">
-              {stats.map((stat) => (
-                <article className="stat-card" key={stat.label}>
-                  <p>{stat.label}</p>
-                  <strong>{stat.value}</strong>
-                </article>
-              ))}
-            </section>
-
-            <section className="panel">
-              <div className="panel-header">
-                <h2>Próximas marcações</h2>
-                <p>Resumo da agenda de hoje</p>
-              </div>
-
-              <div className="bookings-list">
-                {bookings.map((booking) => (
-                  <article className="booking-card" key={booking.id}>
-                    <span className="booking-time">{booking.time}</span>
-                    <div className="booking-details">
-                      <strong>{booking.customer}</strong>
-                      <span>{booking.service}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </div>
+          <DashboardPage name={account.user.full_name} />
         ) : activePage === 'Serviços' ? (
           <ServicesPage />
         ) : activePage === 'Marcações' ? (
           <BookingsPage />
+        ) : activePage === 'Definições' ? (
+          <SettingsPage account={account} onChange={onAccountChange} />
         ) : (
           <section className="panel">
             <h2>{activePage}</h2>

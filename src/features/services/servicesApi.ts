@@ -1,3 +1,4 @@
+import { secureFetch } from '../account/accountApi'
 
 export type Service = {
   id: string
@@ -12,7 +13,7 @@ type ServicesResponse = {
 }
 
 export async function getServices(): Promise<Service[]> {
-  const response = await fetch('/api/services')
+  const response = await secureFetch('/api/services')
 
   if (!response.ok) {
     throw new Error('Erro ao carregar os serviços')
@@ -43,7 +44,7 @@ export type DurationPreview = {
 }
 
 export async function previewDuration(id: string, duration: number): Promise<DurationPreview> {
-  const response = await fetch(`/api/services/${encodeURIComponent(id)}/duration-preview`, {
+  const response = await secureFetch(`/api/services/${encodeURIComponent(id)}/duration-preview`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ duration_minutes: duration }),
   })
@@ -52,7 +53,7 @@ export async function previewDuration(id: string, duration: number): Promise<Dur
 }
 
 export async function updateService(id: string, input: UpdateServiceInput): Promise<Service> {
-  const response = await fetch(`/api/services/${encodeURIComponent(id)}`, {
+  const response = await secureFetch(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -69,7 +70,7 @@ export async function updateService(id: string, input: UpdateServiceInput): Prom
 export async function createService(
   input: CreateServiceInput
 ): Promise<Service> {
-  const response = await fetch('/api/services', {
+  const response = await secureFetch('/api/services', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

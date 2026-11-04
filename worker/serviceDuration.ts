@@ -1,6 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
 
-const organizationId = 'org-demo'
 
 // Until organizations have configurable time zones, business time is Europe/Lisbon.
 export function businessNow(): string {
@@ -33,11 +32,11 @@ export const conflictCondition = `EXISTS (
 export const snapshot = `(SELECT json_group_array(json_object('id', id, 'start_at', start_at, 'end_at', end_at))
   FROM (SELECT id, start_at, end_at FROM projected WHERE affected ORDER BY id))`
 
-export function projectionValues(id: string, now: string, duration: number) {
+export function projectionValues(id: string, now: string, duration: number, organizationId: string) {
   return [id, now, duration, id, now, organizationId]
 }
 
-export async function previewDuration(request: Request, db: D1Database, id: string): Promise<Response> {
+export async function previewDuration(request: Request, db: D1Database, id: string, organizationId: string): Promise<Response> {
   let body: unknown
   try { body = await request.json() } catch {
     return Response.json({ error: 'JSON inválido.' }, { status: 400 })
@@ -57,7 +56,7 @@ export async function previewDuration(request: Request, db: D1Database, id: stri
         (SELECT json_group_array(json_object('id', id, 'customer_name', customer_name,
           'start_at', start_at, 'end_at', end_at, 'proposed_end', proposed_end))
          FROM (SELECT * FROM projected WHERE affected ORDER BY start_at, id)) AS bookings
-    `).bind(...projectionValues(id, now, duration)).first<{ snapshot: string; has_conflicts: number; bookings: string }>()
+    `).bind(...projectionValues(id, now, duration, organizationId)).first<{ snapshot: string; has_conflicts: number; bookings: string }>()
     return Response.json({ bookings: JSON.parse(result!.bookings), snapshot: result!.snapshot,
       has_conflicts: Boolean(result!.has_conflicts), cutoff: now })
   } catch (error) {

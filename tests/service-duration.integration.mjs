@@ -1,3 +1,4 @@
+import { authenticateDemo, demoCookie } from './account-fixture.mjs'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -13,7 +14,7 @@ test('future durations require review and update atomically without changing his
   const runtime = new Miniflare(options)
   async function request(path, method, body) {
     return runtime.dispatchFetch(`http://localhost/api/services/${path}`, {
-      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      method, headers: { 'Content-Type': 'application/json', Cookie: demoCookie }, body: JSON.stringify(body),
     })
   }
   const preview = (duration) => request('service/duration-preview', 'POST', { duration_minutes: duration })
@@ -25,6 +26,7 @@ test('future durations require review and update atomically without changing his
     const schema = await readFile('migrations/0001_initial_schema.sql', 'utf8')
     for (const statement of schema.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
     await db.prepare("INSERT INTO organizations (id, name, slug) VALUES ('org-demo', 'Demo', 'demo'), ('other', 'Other', 'other')").run()
+    await authenticateDemo(db)
     await db.prepare("INSERT INTO services (id, organization_id, name, duration_minutes, price_cents) VALUES ('service', 'org-demo', 'Original', 30, 1000), ('second', 'org-demo', 'Outro', 30, 1000), ('foreign', 'other', 'Privado', 30, 1000)").run()
     async function booking(id, service, start, end, organization = 'org-demo') {
       await db.prepare('INSERT INTO bookings (id, organization_id, service_id, customer_name, start_at, end_at) VALUES (?, ?, ?, ?, ?, ?)')

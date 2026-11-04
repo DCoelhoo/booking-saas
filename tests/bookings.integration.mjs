@@ -1,3 +1,4 @@
+import { authenticateDemo, demoCookie } from './account-fixture.mjs'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -12,8 +13,8 @@ test('agenda persists bookings, rejects conflicts and respects service availabil
   options.resourcePersistencePath = directory
   let runtime = new Miniflare(options)
   async function request(path, method = 'GET', body) {
-    return runtime.dispatchFetch(`http://localhost/api/${path}`, { method,
-      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }) })
+    return runtime.dispatchFetch(`http://localhost/api/${path}`, { method, headers: { Cookie: demoCookie },
+      ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json', Cookie: demoCookie }, body: JSON.stringify(body) }) })
   }
   const input = { customer_name: ' Cliente ', service_id: 'service', date: '2026-11-05', start_time: '10:00' }
   try {
@@ -21,6 +22,7 @@ test('agenda persists bookings, rejects conflicts and respects service availabil
     const schema = await readFile('migrations/0001_initial_schema.sql', 'utf8')
     for (const statement of schema.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
     await db.prepare("INSERT INTO organizations (id, name, slug) VALUES ('org-demo', 'Demo', 'demo'), ('other', 'Other', 'other')").run()
+    await authenticateDemo(db)
     await db.prepare("INSERT INTO services (id, organization_id, name, duration_minutes, price_cents, is_active) VALUES ('service', 'org-demo', 'Consulta', 30, 1000, 1), ('inactive', 'org-demo', 'Inativo', 30, 1000, 0), ('foreign', 'other', 'Privado', 30, 1000, 1)").run()
     for (const invalid of [{ date: '2026-02-30' }, { start_time: '25:00' }, { start_time: '08:59' },
       { start_time: '17:31' }, { customer_name: ' ' }, { service_id: 'inactive' }, { service_id: 'foreign' }, { service_id: 'missing' }]) {

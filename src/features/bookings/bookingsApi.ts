@@ -1,3 +1,4 @@
+import { secureFetch } from '../account/accountApi'
 export type Booking = {
   id: string
   service_id: string
@@ -15,7 +16,7 @@ async function check(response: Response): Promise<void> {
 }
 
 export async function getBookings(date: string): Promise<Booking[]> {
-  const response = await fetch(`/api/bookings?date=${encodeURIComponent(date)}`)
+  const response = await secureFetch(`/api/bookings?date=${encodeURIComponent(date)}`)
   await check(response)
   return (await response.json()).bookings
 }
@@ -23,7 +24,7 @@ export async function getBookings(date: string): Promise<Booking[]> {
 export async function createBooking(input: {
   customer_name: string; service_id: string; date: string; start_time: string
 }): Promise<Booking> {
-  const response = await fetch('/api/bookings', {
+  const response = await secureFetch('/api/bookings', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
   })
   await check(response)
@@ -31,6 +32,6 @@ export async function createBooking(input: {
 }
 
 export async function deleteBooking(id: string): Promise<void> {
-  const response = await fetch(`/api/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  const response = await secureFetch(`/api/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' })
   await check(response)
 }

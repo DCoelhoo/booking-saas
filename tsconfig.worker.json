@@ -4,6 +4,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
     "types": [
+      "node",
       "@cloudflare/workers-types",
       "vite/client"
     ]

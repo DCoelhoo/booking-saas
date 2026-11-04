@@ -1,3 +1,4 @@
+import { authenticateDemo, demoCookie } from './account-fixture.mjs'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -17,9 +18,9 @@ test('services retain edits and state in local D1 across runtime restarts', asyn
   let runtime = new Miniflare(options)
   async function request(path, method = 'GET', body) {
     return runtime.dispatchFetch(`http://localhost/api/services${path}`, {
-      method,
+      method, headers: { Cookie: demoCookie },
       ...(body === undefined ? {} : {
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json', Cookie: demoCookie }, body: JSON.stringify(body),
       }),
     })
   }
@@ -30,6 +31,7 @@ test('services retain edits and state in local D1 across runtime restarts', asyn
       await db.prepare(statement).run()
     }
     await db.prepare("INSERT INTO organizations (id, name, slug) VALUES ('org-demo', 'Demo', 'demo'), ('other', 'Other', 'other')").run()
+    await authenticateDemo(db)
     await db.prepare("INSERT INTO services (id, organization_id, name, duration_minutes, price_cents) VALUES ('other-service', 'other', 'Private', 30, 1000)").run()
     const created = await request('', 'POST', { name: 'Original', duration_minutes: 30, price_cents: 1000 })
     assert.equal(created.status, 201)
