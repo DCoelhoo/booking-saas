@@ -108,3 +108,8 @@
 .account-form input:disabled, .account-form textarea:disabled { background: var(--color-background); color: var(--color-muted); }
 @media (min-width: 1100px) { .settings-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
 a.account-brand { text-decoration: none; }
+
+.account-form .account-remember { display: flex; align-items: center; gap: 10px; margin: 8px 0; cursor: pointer; min-height: 44px; }
+.account-form .account-remember input { width: 20px; min-height: 20px; height: 20px; margin: 0; flex-shrink: 0; accent-color: var(--color-primary); }
+.account-remember span { display: flex; flex-direction: column; gap: 4px; }
+.account-remember small { color: var(--color-muted); font-weight: 400; }

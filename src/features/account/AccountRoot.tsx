@@ -21,6 +21,7 @@ export default function AccountRoot() {
   const [error, setError] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe,setRememberMe] = useState(false)
   const [confirmation, setConfirmation] = useState('')
   const [fullName, setFullName] = useState('')
   const [businessName, setBusinessName] = useState('')
@@ -76,10 +77,11 @@ export default function AccountRoot() {
     setBusy(true)
     try {
       const result = await accountRequest<Account>(register ? 'auth/register' : 'auth/login', 'POST', {
-        email, password, ...(register ? { full_name: fullName, business_name: businessName, slug } : {}),
+        email, password, ...(register ? { full_name: fullName, business_name: businessName, slug } : { remember_me:rememberMe }),
       })
       setPassword('')
       setConfirmation('')
+      setRememberMe(false)
       setAccount(result)
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível entrar.') }
     finally { setBusy(false) }
@@ -136,6 +138,7 @@ export default function AccountRoot() {
             <input id="account-confirmation" type="password" autoComplete="new-password" value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)} minLength={12} maxLength={128} required />
           </>}
+          {!register && <label className="account-remember" htmlFor="account-remember"><input id="account-remember" type="checkbox" checked={rememberMe} onChange={event=>setRememberMe(event.target.checked)} /><span>Manter sessão iniciada<small>Durante 30 dias neste dispositivo.</small></span></label>}
           {error && <p className="booking-error" role="alert">{error}</p>}
           <button type="submit" className="primary-button">{busy ? 'A processar...' : register ? 'Criar conta e negócio' : 'Iniciar sessão'}</button>
         </fieldset>

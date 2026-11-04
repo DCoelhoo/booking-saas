@@ -13,7 +13,8 @@ export type Account = {
   }
 }
 
-const sessionSeconds = 7 * 24 * 60 * 60
+const sessionSeconds = 24 * 60 * 60
+const rememberedSessionSeconds = 30 * sessionSeconds
 const reservedSlugs = new Set(['api', 'admin', 'auth', 'login', 'logout', 'register', 'dashboard',
   'assets', 'settings', 'definicoes', 'servicos', 'agenda', 'account', 'conta', 'www', 'help', 'support'])
 export function validSlug(value: unknown): value is string {
@@ -63,10 +64,10 @@ function cookie(request: Request, token: string, maxAge = sessionSeconds): strin
   const secure = new URL(request.url).protocol === 'https:'
   return `${secure ? '__Host-booking_session' : 'booking_session'}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? '; Secure' : ''}`
 }
-function newSession(db: D1Database, userId: string) {
+function newSession(db: D1Database, userId: string, maxAge = sessionSeconds) {
   const token = randomBytes(32).toString('base64url')
   return { token, statement: db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
-    .bind(digest(token), userId, Date.now() + sessionSeconds * 1000) }
+    .bind(digest(token), userId, Date.now() + maxAge * 1000) }
 }
 export async function getAccount(db: D1Database, userId: string): Promise<Account | null> {
   const user = await db.prepare(`SELECT id, email, full_name, organization_id, role, staff_id, COALESCE((SELECT CASE WHEN m.photo_key != '' THEN '/api/staff-photos/' || m.photo_key || '.jpg' ELSE '' END FROM staff_members m WHERE m.id=users.staff_id),'') AS photo_url FROM users WHERE id = ?
@@ -183,6 +184,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
       if (!body || !validEmail(email) || !validPassword(body.password)) {
         return Response.json({ error: 'Indica um email válido e uma palavra-passe entre 12 e 128 caracteres.' }, { status: 400 })
       }
+      if (path === '/api/auth/login' && body.remember_me !== undefined && typeof body.remember_me !== 'boolean') return Response.json({ error: 'Opção de sessão inválida.' }, { status: 400 })
       if (!await rateLimit(db, `email:${digest(email)}`, 10)) {
         return Response.json({ error: 'Demasiadas tentativas. Tenta novamente dentro de 15 minutos.' }, { status: 429, headers: { 'Retry-After': '900' } })
       }
@@ -232,13 +234,14 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
       if (!user || !valid) return Response.json({ error: 'Email ou palavra-passe incorretos.' }, { status: 401 })
       if (!await getAccount(db, user.id)) return Response.json({ error: 'Email ou palavra-passe incorretos.' }, { status: 401 })
       userId = user.id
-      const session = newSession(db, userId)
+      const maxAge = body.remember_me === true ? rememberedSessionSeconds : sessionSeconds
+      const session = newSession(db, userId, maxAge)
       const oldToken = cookieToken(request)
       await db.batch([
         db.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(oldToken ? digest(oldToken) : ''),
         session.statement,
       ])
-      return Response.json(await getAccount(db, userId), { headers: { 'Set-Cookie': cookie(request, session.token) } })
+      return Response.json(await getAccount(db, userId), { headers: { 'Set-Cookie': cookie(request, session.token, maxAge) } })
     }
     if (path === '/api/auth/password' && request.method === 'POST') {
       const account = await authenticate(request, db)

@@ -55,3 +55,5 @@ Executar `npm test` testa registo, login, cookies, persistência de sessão, per
 alteração de palavra-passe, revogação, expiração, limites de tentativas e isolamento
 entre duas contas no runtime Cloudflare com D1 isolada. Os testes existentes da
 agenda e dos serviços também usam sessões autenticadas.
+
+O login apresenta “Manter sessão iniciada”, desmarcado por defeito. Sem selecionar, a sessão dura 24 horas; com remember_me: true, dura 30 dias. O prazo é aplicado ao cookie HttpOnly/Secure em HTTPS e à sessão guardada por hash na D1. Logout e confirmação de alteração de palavra-passe revogam também as sessões de 30 dias. As sessões existentes mantêm o prazo original.
