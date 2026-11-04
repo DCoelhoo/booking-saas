@@ -171,6 +171,6 @@ export default function PublicBookingPage({ slug, preview = false }: { slug: str
         </>}
       </section>
     </main>
-    <footer className="public-footer"><span>Marcações com Booking SaaS</span>{!preview && <a href="/conta">Área do negócio</a>}</footer>
+    <footer className="public-footer"><span>Marcações com Giro</span>{!preview && <a href="/conta">Área do negócio</a>}</footer>
   </div>
 }

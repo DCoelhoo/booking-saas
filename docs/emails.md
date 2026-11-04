@@ -52,7 +52,7 @@ domínio, verificando SPF, DKIM e DMARC segundo o assistente do serviço.
 Configura em produção:
 
 - EMAIL_MODE=live
-- EMAIL_FROM=Booking SaaS <notificacoes@teudominio.pt>
+- EMAIL_FROM=Giro <notificacoes@teudominio.pt>
 - APP_URL=https://endereco-real-da-aplicacao
 
 O binding EMAIL e um cron de cinco em cinco minutos estão declarados no Wrangler.

@@ -1,4 +1,4 @@
-# Booking SaaS
+# Giro
 
 Aplicação de marcações para diferentes tipos de negócio, com React, TypeScript,
 Vite, Cloudflare Workers e D1.

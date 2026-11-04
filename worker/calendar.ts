@@ -23,7 +23,7 @@ function fold(line:string):string {
 type Event = { id:string; version:number; status:string; customer_name:string; service_name:string; start_at:string; end_at:string; modified_at:string }
 
 export function calendarDocument(name:string,events:Event[]):string {
-  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Booking SaaS//Agenda//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH',`X-WR-CALNAME:${text(name)}`,'X-WR-TIMEZONE:Europe/Lisbon']
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Giro//Agenda//PT','CALSCALE:GREGORIAN','METHOD:PUBLISH',`X-WR-CALNAME:${text(name)}`,'X-WR-TIMEZONE:Europe/Lisbon']
   for(const event of events){
     const start=businessTimestamp(event.start_at),end=businessTimestamp(event.end_at)
     if(start===null||end===null||end<=start)continue
@@ -33,7 +33,7 @@ export function calendarDocument(name:string,events:Event[]):string {
     lines.push('BEGIN:VEVENT',`UID:${digest(event.id)}@booking-saas`, `DTSTAMP:${stamp(Number.isFinite(modified)?modified:0)}`,`SEQUENCE:${Math.max(0,event.version-1)}`,
       `DTSTART:${stamp(start)}`,`DTEND:${stamp(end)}`,`STATUS:${status}`,`TRANSP:${status==='CANCELLED'?'TRANSPARENT':'OPAQUE'}`,'CLASS:PRIVATE',
       `SUMMARY:${text(`${event.status==='canceled'?'Cancelada: ':''}${event.service_name} · ${event.customer_name}`)}`,
-      `DESCRIPTION:${text(`Estado: ${label}. Gere esta marcação na aplicação Booking SaaS.`)}`,'END:VEVENT')
+      `DESCRIPTION:${text(`Estado: ${label}. Gere esta marcação na aplicação Giro.`)}`,'END:VEVENT')
   }
   lines.push('END:VCALENDAR')
   return lines.map(fold).join('\r\n')+'\r\n'

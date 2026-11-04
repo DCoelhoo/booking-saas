@@ -25,7 +25,7 @@ function AgendaPreview() {
 export default function LandingPage() {
   return <div className="home-page">
     <a className="home-skip" href="#conteudo">Saltar para o conteúdo</a>
-    <header className="home-header"><a className="home-brand" href="/" aria-label="Booking SaaS: início"><span>B</span>Booking SaaS</a>
+    <header className="home-header"><a className="home-brand" href="/" aria-label="Giro: início"><span>G</span>Giro</a>
       <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#funcionalidades">Funcionalidades</a><a href="#preco">Preço</a></nav>
       <div className="home-header-actions"><a className="home-login" href="/conta">Entrar</a><a className="home-button home-button-small" href="/conta?criar=1">Experimentar <span aria-hidden="true">↗</span></a></div>
     </header>
@@ -54,6 +54,6 @@ export default function LandingPage() {
       ].map(([q,a])=><details key={q}><summary>{q}<span aria-hidden="true">+</span></summary><p>{a}</p></details>)}</div></section>
       <section className="home-final"><p className="home-eyebrow">O PRÓXIMO PASSO É TEU</p><h2>Abre espaço para<br />um dia mais simples.</h2><a className="home-button" href="/conta?criar=1">Criar o meu estabelecimento <span aria-hidden="true">↗</span></a></section>
     </main>
-    <footer className="home-footer"><a className="home-brand" href="/"><span>B</span>Booking SaaS</a><p>O teu negócio. Bem organizado.</p><a href="/conta">Aceder à minha conta ↗</a></footer>
+    <footer className="home-footer"><a className="home-brand" href="/"><span>G</span>Giro</a><p>O teu negócio. Bem organizado.</p><a href="/conta">Aceder à minha conta ↗</a></footer>
   </div>
 }

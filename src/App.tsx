@@ -51,8 +51,8 @@ function App({ account, onAccountChange, onLogout }: {
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-icon">B</span>
-          <span>Booking SaaS</span>
+          <span className="brand-icon">G</span>
+          <span>Giro</span>
         </div>
 
         <nav className="navigation" aria-label="Navegação lateral">

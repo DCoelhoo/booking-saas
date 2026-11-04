@@ -24,7 +24,7 @@ export default function ConfirmPassword({ token, onDone, invitation = false }: {
     finally { setBusy(false) }
   }
   return <main className="account-shell"><section className="account-card">
-    <a className="account-brand" href="/">Booking SaaS</a><h1>{invitation ? 'Aceitar convite para a equipa' : 'Escolher nova palavra-passe'}</h1>
+    <a className="account-brand" href="/">Giro</a><h1>{invitation ? 'Aceitar convite para a equipa' : 'Escolher nova palavra-passe'}</h1>
     {message ? <p role="status">{message}</p> : <>
       <p>{invitation ? 'Escolhe uma palavra-passe para acederes à tua agenda. Depois, inicia sessão com o email que recebeu o convite.' : 'Depois de confirmares, todas as sessões anteriores serão terminadas.'}</p>
       <form className="account-form" onSubmit={submit}><fieldset disabled={busy}>

@@ -168,7 +168,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
           AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview') AND json_extract(payload,'$.to')=?`).bind(user.organization_id,email),
         emailStatement(db, user.organization_id, 'password_reset_request', { to: email, subject: 'Recupera o acesso à tua conta',
-          text: `Foi pedida a recuperação de acesso à tua conta Booking SaaS.\n\nEscolhe uma nova palavra-passe neste link:\n\n${appUrl(env)}/#reset-password=${token}\n\nO link é válido por 30 minutos e só pode ser usado uma vez. A palavra-passe atual e as sessões mantêm-se até confirmares. Se não fizeste este pedido, ignora esta mensagem.`,
+          text: `Foi pedida a recuperação de acesso à tua conta Giro.\n\nEscolhe uma nova palavra-passe neste link:\n\n${appUrl(env)}/#reset-password=${token}\n\nO link é válido por 30 minutos e só pode ser usado uma vez. A palavra-passe atual e as sessões mantêm-se até confirmares. Se não fizeste este pedido, ignora esta mensagem.`,
         }, expiresAt, localPreview(request, env)),
       ])
       return response()
@@ -213,7 +213,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
             db.prepare('INSERT INTO users (id, organization_id, email, full_name, password_hash) VALUES (?, ?, ?, ?, ?)')
               .bind(userId, orgId, email, full_name.trim(), hashed),
             session.statement,
-            emailStatement(db, orgId, 'welcome', { to: email, subject: 'Bem-vindo ao Booking SaaS',
+            emailStatement(db, orgId, 'welcome', { to: email, subject: 'Bem-vindo ao Giro',
               text: `Olá, ${full_name.trim()}!\n\nA conta do negócio ${business_name.trim()} foi criada. Tens 14 dias de teste, sem cartão e sem cobranças automáticas.\n\nJá podes configurar os serviços e horários na aplicação.\n\nSe não criaste esta conta, ignora esta mensagem.` }, null, localPreview(request, env)),
           ])
         } catch (error) {
@@ -300,7 +300,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
           SELECT ?, ?, 'password_changed', ?, ? WHERE changes() = 1`)
           .bind(crypto.randomUUID(), pending.organization_id, JSON.stringify({ to: pending.email,
             subject: 'A tua palavra-passe foi alterada',
-            text: 'A palavra-passe da tua conta Booking SaaS foi alterada. Todas as sessões anteriores foram terminadas. Se não reconheces esta alteração, contacta o suporte da aplicação.',
+            text: 'A palavra-passe da tua conta Giro foi alterada. Todas as sessões anteriores foram terminadas. Se não reconheces esta alteração, contacta o suporte da aplicação.',
           }), localPreview(request, env) ? 'preview' : 'pending'),
         db.prepare(`DELETE FROM sessions WHERE user_id = ? AND EXISTS (
           SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`).bind(pending.user_id, pending.user_id, hashed),

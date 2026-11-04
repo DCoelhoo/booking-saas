@@ -14,7 +14,7 @@ export default function ForgotPassword({ initialEmail, onBack }: { initialEmail:
     finally { setBusy(false) }
   }
   return <main className="account-shell"><section className="account-card">
-    <a className="account-brand" href="/">Booking SaaS</a><h1>Recuperar acesso</h1>
+    <a className="account-brand" href="/">Giro</a><h1>Recuperar acesso</h1>
     <p>Indica o email da tua conta. Enviaremos um link para escolheres uma nova palavra-passe.</p>
     <form className="account-form" onSubmit={submit}><fieldset disabled={busy}>
       <label htmlFor="reset-email">Email da conta</label><input id="reset-email" type="email" autoComplete="email" maxLength={254} value={email} onChange={(e) => { setEmail(e.target.value); setMessage('') }} required />
