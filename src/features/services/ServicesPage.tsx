@@ -196,9 +196,17 @@ export default function ServicesPage() {
             id="service-price"
             type="number"
             min="0"
-            step="0.01"
+            step="any"
             value={price}
             onChange={(event) => setPrice(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+              event.preventDefault()
+              const current = Number(price)
+              if (!Number.isFinite(current)) return
+              const cents = Math.max(0, Math.round(current * 100) + (event.key === 'ArrowUp' ? 100 : -100))
+              setPrice((cents / 100).toFixed(2))
+            }}
             placeholder="15.00"
             required
             disabled={saving}
