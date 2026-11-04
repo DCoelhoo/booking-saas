@@ -125,6 +125,35 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
       if (token) await db.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(digest(token)).run()
       return new Response(null, { status: 204, headers: { 'Set-Cookie': cookie(request, '', 0) } })
     }
+    if (path === '/api/auth/password/reset' && request.method === 'POST') {
+      if (!await rateLimit(db, `reset-ip:${request.headers.get('CF-Connecting-IP') || 'local'}`, 30)) {
+        return Response.json({ error: 'Demasiados pedidos. Tenta novamente dentro de 15 minutos.' }, { status: 429, headers: { 'Retry-After': '900' } })
+      }
+      const body = await jsonBody(request)
+      const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+      if (!validEmail(email)) return Response.json({ error: 'Indica um email válido.' }, { status: 400 })
+      if (!configuredEmail(request, env)) return Response.json({ error: 'A recuperação por email ainda não está disponível. Tenta novamente mais tarde.' }, { status: 503 })
+      const response = () => Response.json({ message: 'Se existir uma conta com este email, receberás um link para recuperar o acesso. O link é válido por 30 minutos.' }, { status: 202 })
+      // Apply the same limit and response to existing and unknown addresses.
+      if (!await rateLimit(db, `reset-email:${digest(email)}`, 3)) return response()
+      const token = randomBytes(32).toString('base64url')
+      const user = await db.prepare('SELECT id, organization_id, password_hash FROM users WHERE email = ?')
+        .bind(email).first<{ id: string; organization_id: string; password_hash: string }>()
+      if (!user) return response()
+      const expiresAt = Date.now() + 30 * 60 * 1000
+      await db.batch([
+        db.prepare(`INSERT INTO password_change_tokens (token_hash, user_id, password_hash_at_request, expires_at)
+          VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET token_hash = excluded.token_hash,
+          password_hash_at_request = excluded.password_hash_at_request, expires_at = excluded.expires_at,
+          created_at = CURRENT_TIMESTAMP`).bind(digest(token), user.id, user.password_hash, expiresAt),
+        db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
+          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')`).bind(user.organization_id),
+        emailStatement(db, user.organization_id, 'password_reset_request', { to: email, subject: 'Recupera o acesso à tua conta',
+          text: `Foi pedida a recuperação de acesso à tua conta Booking SaaS.\n\nEscolhe uma nova palavra-passe neste link:\n\n${appUrl(env)}/#reset-password=${token}\n\nO link é válido por 30 minutos e só pode ser usado uma vez. A palavra-passe atual e as sessões mantêm-se até confirmares. Se não fizeste este pedido, ignora esta mensagem.`,
+        }, expiresAt, localPreview(request, env)),
+      ])
+      return response()
+    }
     if ((path === '/api/auth/register' || path === '/api/auth/login') && request.method === 'POST') {
       const ip = request.headers.get('CF-Connecting-IP') || 'local'
       if (!await rateLimit(db, `ip:${ip}`, 30)) {
@@ -217,7 +246,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
           password_hash_at_request = excluded.password_hash_at_request, expires_at = excluded.expires_at,
           created_at = CURRENT_TIMESTAMP`).bind(digest(token), account.user.id, user.password_hash, expiresAt),
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL WHERE organization_id = ?
-          AND kind = 'password_request' AND status IN ('pending', 'preview')`).bind(account.organization.id),
+          AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')`).bind(account.organization.id),
         emailStatement(db, account.organization.id, 'password_request', {
           to: account.user.email, subject: 'Confirma a alteração da palavra-passe',
           text: `Olá, ${account.user.full_name}.\n\nFoi pedida uma alteração da palavra-passe da tua conta. Abre este link para escolher uma nova palavra-passe:\n\n${link}\n\nO link é válido durante 30 minutos e só pode ser usado uma vez. A tua palavra-passe mantém-se até confirmares. Se não fizeste este pedido, ignora a mensagem.`,
@@ -240,7 +269,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
         JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? AND t.expires_at > ?
           AND t.password_hash_at_request = u.password_hash`).bind(tokenHash, Date.now())
         .first<{ user_id: string; organization_id: string; email: string }>()
-      if (!pending) return Response.json({ error: 'O link expirou ou já foi utilizado. Pede uma nova alteração nas Definições.' }, { status: 400 })
+      if (!pending) return Response.json({ error: 'O link expirou ou já foi utilizado. Pede um novo link na página de início de sessão ou nas Definições.' }, { status: 400 })
       const hashed = await passwordHash(body.new_password)
       const [updated] = await db.batch([
         db.prepare(`UPDATE users SET password_hash = ? WHERE id = ? AND EXISTS (
@@ -258,7 +287,7 @@ export async function handleAuth(request: Request, db: D1Database, env: EmailEnv
         db.prepare(`DELETE FROM password_change_tokens WHERE user_id = ? AND EXISTS (
           SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`).bind(pending.user_id, pending.user_id, hashed),
         db.prepare(`UPDATE email_outbox SET status = 'expired', payload = NULL
-          WHERE organization_id = ? AND kind = 'password_request' AND status IN ('pending', 'preview')
+          WHERE organization_id = ? AND kind IN ('password_request', 'password_reset_request') AND status IN ('pending', 'preview')
             AND EXISTS (SELECT 1 FROM users WHERE id = ? AND password_hash = ?)`)
           .bind(pending.organization_id, pending.user_id, hashed),
       ])

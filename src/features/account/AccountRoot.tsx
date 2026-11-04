@@ -3,6 +3,12 @@ import App from '../../App'
 import { accountRequest, currentAccount, type Account } from './accountApi'
 import './Account.css'
 import ConfirmPassword from './ConfirmPassword'
+import ForgotPassword from './ForgotPassword'
+
+const passwordLinkToken = () => {
+  const hash = new URLSearchParams(window.location.hash.slice(1))
+  return hash.get('change-password') || hash.get('reset-password') || ''
+}
 
 export default function AccountRoot() {
   const [account, setAccount] = useState<Account | null>(null)
@@ -10,6 +16,7 @@ export default function AccountRoot() {
   const [sessionError, setSessionError] = useState('')
   const [retry, setRetry] = useState(0)
   const [register, setRegister] = useState(false)
+  const [forgot, setForgot] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [email, setEmail] = useState('')
@@ -19,7 +26,7 @@ export default function AccountRoot() {
   const [businessName, setBusinessName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
-  const [passwordToken, setPasswordToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('change-password') || '')
+  const [passwordToken, setPasswordToken] = useState(passwordLinkToken)
 
   useEffect(() => {
     let cancelled = false
@@ -31,7 +38,7 @@ export default function AccountRoot() {
 
   useEffect(() => {
     const expire = () => { setAccount(null); setError('A sessão terminou. Inicia sessão novamente.'); setPassword(''); setConfirmation('') }
-    const followEmail = () => setPasswordToken(new URLSearchParams(window.location.hash.slice(1)).get('change-password') || '')
+    const followEmail = () => setPasswordToken(passwordLinkToken())
     window.addEventListener('session-expired', expire)
     window.addEventListener('hashchange', followEmail)
     return () => { window.removeEventListener('session-expired', expire); window.removeEventListener('hashchange', followEmail) }
@@ -86,12 +93,13 @@ export default function AccountRoot() {
   }
 
   if (passwordToken) return <ConfirmPassword token={passwordToken} onDone={() => {
-    setPasswordToken(''); setAccount(null); setPassword(''); setConfirmation(''); setLoading(true); setRetry((n) => n + 1)
+    setPasswordToken(''); setForgot(false); setAccount(null); setPassword(''); setConfirmation(''); setLoading(true); setRetry((n) => n + 1)
   }} />
   if (loading) return <main className="account-shell"><p role="status">A verificar sessão...</p></main>
   if (sessionError) return <main className="account-shell"><p role="alert">{sessionError}</p>
     <button type="button" className="primary-button" onClick={() => { setLoading(true); setSessionError(''); setRetry((value) => value + 1) }}>Tentar novamente</button></main>
   if (account) return <App key={account.user.id} account={account} onAccountChange={setAccount} onLogout={logout} />
+  if (forgot) return <ForgotPassword initialEmail={email} onBack={() => setForgot(false)} />
 
   return <main className="account-shell">
     <section className="account-card">
@@ -130,6 +138,7 @@ export default function AccountRoot() {
           <button type="submit" className="primary-button">{busy ? 'A processar...' : register ? 'Criar conta e negócio' : 'Iniciar sessão'}</button>
         </fieldset>
       </form>
+      {!register && <button type="button" className="account-switch" disabled={busy} onClick={() => { setForgot(true); setPassword(''); setError('') }}>Esqueci-me da palavra-passe</button>}
       <button type="button" className="account-switch" disabled={busy} onClick={() => { setRegister(!register); setError(''); setPassword(''); setConfirmation('') }}>
         {register ? 'Já tenho conta — iniciar sessão' : 'Ainda não tenho conta — criar conta'}
       </button>
