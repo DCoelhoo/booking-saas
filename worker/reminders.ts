@@ -21,7 +21,7 @@ export async function queueBookingReminders(env: EmailEnv, now = Date.now(), org
     const changed = Date.parse(`${b.changed_at.replace(' ', 'T')}Z`)
     // A booking created/moved less than 24 hours before the visit already has a fresh confirmation.
     const eligible = starts !== null && starts > now && Number.isFinite(changed) && changed <= starts - 86_400_000
-    const payload = eligible ? JSON.stringify({ to: b.customer_email, subject: `Lembrete da tua marcação — ${b.business_name}`,
+    const payload = eligible ? JSON.stringify({ to: b.customer_email, subject: `Lembrete da tua marcação: ${b.business_name}`,
       text: `Lembramos a tua marcação.\n\nNegócio: ${b.business_name}\nServiço: ${b.service_name}\nColaborador: ${b.staff_name}\nData: ${b.start_at.slice(0, 10)}\nHorário: ${b.start_at.slice(11, 16)}–${b.end_at.slice(11, 16)} (hora de Lisboa)\nReferência: ${b.id}\n\nPara gerir a reserva, utiliza o link privado do email de confirmação ou contacta o negócio.\n${[b.contact_email, b.phone].filter(Boolean).join(' · ')}` }) : null
     return db.prepare(`INSERT OR IGNORE INTO email_outbox (id, organization_id, kind, payload, status, expires_at, booking_id, booking_version, booking_start_at)
       SELECT ?, organization_id, 'booking_reminder', ?, ?, ?, id, version, start_at FROM bookings

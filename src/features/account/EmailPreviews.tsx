@@ -26,7 +26,7 @@ export default function EmailPreviews() {
   }, [local])
   if (!local || !messages) return null
   return <details className="panel email-previews">
-    <summary>Emails locais — não enviados</summary>
+    <summary>Emails locais: não enviados</summary>
     <p>Pré-visualização para testes. Estas mensagens não são enviadas para caixas de correio reais.</p>
     <p>Os lembretes são preparados cerca de 24 horas antes. Reservas criadas ou reagendadas com menos antecedência recebem apenas a confirmação da alteração.</p>
     <button type="button" className="secondary-button" disabled={busy} onClick={() => {

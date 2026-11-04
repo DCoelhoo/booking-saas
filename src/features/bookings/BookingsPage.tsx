@@ -58,7 +58,7 @@ export default function BookingsPage({ canManage, ownAgenda = false }: { canMana
   const [hours, minutes] = startTime.split(':').map(Number)
   const endMinutes = hours * 60 + minutes + (selectedService?.duration_minutes ?? 0)
   const endTime = Number.isFinite(endMinutes) && endMinutes < 1440
-    ? `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}` : '—'
+    ? `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}` : 'Por definir'
 
   function selectDate(value: string) {
     if (!value || busy) return
@@ -145,7 +145,7 @@ export default function BookingsPage({ canManage, ownAgenda = false }: { canMana
           <label htmlFor="booking-service">Serviço</label>
           <select id="booking-service" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required disabled={busy || !ready}>
             <option value="">Seleciona um serviço</option>
-            {services.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.duration_minutes} min</option>)}
+            {services.map((s) => <option key={s.id} value={s.id}>{s.name}: {s.duration_minutes} min</option>)}
           </select>
           <label htmlFor="booking-time">Hora de início</label>
           <input id="booking-time" type="time" min={periods[0]?.start} max={periods.at(-1)?.end} step="60" value={startTime} onChange={(e) => setStartTime(e.target.value)} required disabled={busy} />

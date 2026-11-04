@@ -25,7 +25,7 @@ function AgendaPreview() {
 export default function LandingPage() {
   return <div className="home-page">
     <a className="home-skip" href="#conteudo">Saltar para o conteúdo</a>
-    <header className="home-header"><a className="home-brand" href="/" aria-label="Booking SaaS — início"><span>B</span>Booking SaaS</a>
+    <header className="home-header"><a className="home-brand" href="/" aria-label="Booking SaaS: início"><span>B</span>Booking SaaS</a>
       <nav aria-label="Navegação principal"><a href="#como-funciona">Como funciona</a><a href="#funcionalidades">Funcionalidades</a><a href="#preco">Preço</a></nav>
       <div className="home-header-actions"><a className="home-login" href="/conta">Entrar</a><a className="home-button home-button-small" href="/conta?criar=1">Experimentar <span aria-hidden="true">↗</span></a></div>
     </header>
@@ -37,7 +37,7 @@ export default function LandingPage() {
         <p className="home-trial-note"><span aria-hidden="true">✓</span> 14 dias de teste <span>·</span> Sem cartão <span>·</span> Sem cobranças automáticas no teste</p>
       </div><div className="home-hero-aside"><span className="home-aside-number">01 / ORGANIZAR</span><p>Menos tempo a combinar.<br /><strong>Mais tempo a atender.</strong></p><div className="home-aside-symbol" aria-hidden="true">✳</div></div>
       </section>
-      <section className="home-product" aria-label="Pré-visualização da aplicação"><AgendaPreview /><p>Para estabelecimentos com serviços por marcação — de um profissional a uma equipa.</p></section>
+      <section className="home-product" aria-label="Pré-visualização da aplicação"><AgendaPreview /><p>Para estabelecimentos com serviços por marcação: de um profissional a uma equipa.</p></section>
       <section className="home-features home-section" id="funcionalidades"><div className="home-section-heading"><p className="home-eyebrow">FEITO PARA O TEU DIA A DIA</p><h2>Do primeiro clique<br />ao próximo atendimento.</h2></div>
         <div className="home-feature-grid">{features.map(([n,title,text])=><article key={n}><span className="home-feature-number">{n}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
         <div className="home-feature-strip"><span>Horários, pausas e encerramentos</span><span>Serviços, duração e preços</span><span>Histórico de marcações</span><span>Identidade do estabelecimento</span></div>

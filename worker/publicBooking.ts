@@ -165,7 +165,7 @@ export async function handlePublicBooking(request: Request, env: EmailEnv): Prom
         bookingNotification(db, id, org.id, preview, true),
         db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
           SELECT ?, b.organization_id, 'booking_confirmation', json_object('to', b.customer_email,
-            'subject', 'Marcação confirmada — ' || o.name,
+            'subject', 'Marcação confirmada: ' || o.name,
             'text', 'A tua marcação está confirmada.' || char(10) || 'Negócio: ' || o.name || char(10) ||
               'Serviço: ' || b.service_name_snapshot || char(10) || 'Colaborador: ' || (SELECT name FROM staff_members WHERE id=b.staff_id) || char(10) || 'Data: ' || substr(b.start_at, 1, 10) || char(10) ||
               'Horário: ' || substr(b.start_at, 12, 5) || '–' || substr(b.end_at, 12, 5) || char(10) ||

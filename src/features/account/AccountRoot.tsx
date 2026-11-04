@@ -142,7 +142,7 @@ export default function AccountRoot() {
       </form>
       {!register && <button type="button" className="account-switch" disabled={busy} onClick={() => { setForgot(true); setPassword(''); setError('') }}>Esqueci-me da palavra-passe</button>}
       <button type="button" className="account-switch" disabled={busy} onClick={() => { setRegister(!register); setError(''); setPassword(''); setConfirmation('') }}>
-        {register ? 'Já tenho conta — iniciar sessão' : 'Ainda não tenho conta — criar conta'}
+        {register ? 'Já tenho conta: iniciar sessão' : 'Ainda não tenho conta: criar conta'}
       </button>
     </section>
   </main>

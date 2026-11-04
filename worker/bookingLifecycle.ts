@@ -95,7 +95,7 @@ export async function changeBooking(db: D1Database, b: LifecycleBooking, action:
     .bind(event, actor, action, b.start_at, b.end_at, b.id, b.organization_id, version + 1)
   const notifications = ['business', 'customer'].map((recipient) => db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
     SELECT ?, b.organization_id, 'booking_changed', json_object('to', ${recipient === 'customer' ? 'b.customer_email' : "CASE WHEN o.contact_email != '' THEN o.contact_email ELSE u.email END"},
-      'subject', ? || ' — ' || o.name,
+      'subject', ? || ': ' || o.name,
       'text', ? || char(10) || 'Cliente: ' || b.customer_name || char(10) || 'Serviço: ' || COALESCE(b.service_name_snapshot, s.name) || char(10) ||
         'Horário anterior: ' || e.previous_start_at || ' – ' || e.previous_end_at || char(10) ||
         'Horário: ' || b.start_at || ' – ' || b.end_at || ' (hora de Lisboa)' || char(10) || 'Referência: ' || b.id || char(10) || 'Para outras alterações, utiliza o link do email de confirmação ou contacta o negócio.'), ?

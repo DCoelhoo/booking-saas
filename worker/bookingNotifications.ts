@@ -4,7 +4,7 @@ export function bookingNotification(db: D1Database, bookingId: string, organizat
   return db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
     SELECT ?, b.organization_id, '${staff ? 'booking_assigned' : 'booking_created'}', json_object(
       'to', ${staff ? 'u.email' : "CASE WHEN o.contact_email != '' THEN o.contact_email ELSE u.email END"},
-      'subject', 'Nova marcação — ' || o.name,
+      'subject', 'Nova marcação: ' || o.name,
       'text', 'Recebeste uma nova marcação.' || char(10) || char(10) ||
         'Cliente: ' || b.customer_name || char(10) || 'Email: ' || b.customer_email || char(10) ||
         'Telefone: ' || b.customer_phone || char(10) || 'Serviço: ' || s.name || char(10) ||
