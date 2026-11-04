@@ -101,7 +101,9 @@ test('expired businesses retain reads, account management, cancellation and isol
     runtime = new Miniflare(options)
     db = await runtime.getD1Database('booking_saas_db')
     assert.equal((await (await request('subscription')).json()).can_manage, false)
-    assert.deepEqual((await (await request('bookings?date=2090-01-01')).json()).bookings, [])
+    const history = (await (await request('bookings?date=2090-01-01')).json()).bookings
+    assert.equal(history.length, 1)
+    assert.equal(history[0].status, 'canceled')
     assert.equal((await (await request('auth/session')).json()).user.full_name, 'Nome pessoal atualizado')
     assert.equal((await request('auth/logout', 'POST', {})).status, 204)
   } finally {

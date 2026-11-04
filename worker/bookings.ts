@@ -1,8 +1,10 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { availabilityCondition, validDate } from './availability.ts'
 import { bookingNotification } from './bookingNotifications.ts'
+import { changeBooking, findBooking } from './bookingLifecycle.ts'
+import { jsonBody } from './auth.ts'
 
-const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, b.customer_email, b.customer_phone, b.booking_source, b.total_cents, b.online_due_cents, b.on_site_due_cents, b.payment_mode, COALESCE(b.service_name_snapshot, s.name) AS service_name`
+const columns = `b.status, b.version, b.id, b.service_id, b.customer_name, b.start_at, b.end_at, b.customer_email, b.customer_phone, b.booking_source, b.total_cents, b.online_due_cents, b.on_site_due_cents, b.payment_mode, COALESCE(b.service_name_snapshot, s.name) AS service_name`
 
 export async function handleBookings(request: Request, db: D1Database, organizationId: string, emailPreview = false): Promise<Response | null> {
   const url = new URL(request.url)
@@ -54,7 +56,7 @@ export async function handleBookings(request: Request, db: D1Database, organizat
         INSERT INTO bookings (id, organization_id, service_id, customer_name, start_at, end_at)
         SELECT ?, c.organization_id, c.service_id, ?, c.start_at, c.end_at FROM candidate c
         WHERE ${allowed} AND NOT EXISTS (
-          SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id
+          SELECT 1 FROM bookings b WHERE b.organization_id = c.organization_id AND b.status != 'canceled'
             AND julianday(b.start_at) < julianday(c.end_at)
             AND julianday(b.end_at) > julianday(c.start_at)
         ) RETURNING id`).bind(startAt, startAt, service_id, organizationId, id, customer_name.trim())
@@ -69,11 +71,13 @@ export async function handleBookings(request: Request, db: D1Database, organizat
       return Response.json(booking, { status: 201 })
     }
 
-    if (match && request.method === 'DELETE') {
-      const deleted = await db.prepare('DELETE FROM bookings WHERE id = ? AND organization_id = ? RETURNING id')
-        .bind(match[1], organizationId).first()
-      return deleted ? new Response(null, { status: 204 })
-        : Response.json({ error: 'Marcação não encontrada.' }, { status: 404 })
+    if (match && ['PATCH', 'DELETE'].includes(request.method)) {
+      const booking = await findBooking(db, match[1], organizationId)
+      if (!booking || (request.method === 'DELETE' && booking.status === 'canceled')) return Response.json({ error: 'Marcação não encontrada.' }, { status: 404 })
+      const body = request.method === 'DELETE' ? { status: 'canceled', version: booking.version } : await jsonBody(request)
+      if (!body || typeof body.status !== 'string' || !['canceled', 'completed', 'no_show'].includes(body.status) || !Number.isSafeInteger(body.version)) return Response.json({ error: 'Estado ou versão inválidos.' }, { status: 400 })
+      const result = await changeBooking(db, booking, body.status, body.version as number, 'owner', emailPreview)
+      return request.method === 'DELETE' && result.ok ? new Response(null, { status: 204 }) : result
     }
     return Response.json({ error: 'Método não permitido.' }, { status: 405 })
   } catch (error) {

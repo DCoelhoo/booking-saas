@@ -3,6 +3,7 @@ import { accountRequest, type Account } from './accountApi'
 import AvailabilitySettings from './AvailabilitySettings'
 import EmailPreviews from './EmailPreviews'
 import BookingPaymentSettings from './BookingPaymentSettings'
+import BookingChangePolicy from './BookingChangePolicy'
 
 export default function SettingsPage({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [profile, setProfile] = useState({ ...account.organization, full_name: account.user.full_name })
@@ -131,6 +132,7 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
         <button type="submit" className="secondary-button">{busy ? 'A processar...' : 'Enviar link de alteração'}</button>
       </fieldset>
     </form>
+    <BookingChangePolicy canManage={canManage} />
     <EmailPreviews />
   </div>
 }

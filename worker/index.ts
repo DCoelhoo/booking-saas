@@ -8,6 +8,8 @@ import { handleAvailability } from './availability.ts'
 import { handleBookingPaymentSettings, servicePaymentQuote } from './bookingPayments.ts'
 import { handleBookings } from './bookings.ts'
 import { handlePublicBooking } from './publicBooking.ts'
+import { handleBookingManagement } from './bookingLifecycle.ts'
+import { jsonBody } from './auth.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
 type Env = EmailEnv
@@ -17,6 +19,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (url.pathname === '/api/health') return Response.json({ status: 'ok', application: 'booking-saas' })
     const invalidMutation = checkMutation(request)
     if (invalidMutation) return invalidMutation
+    const managementResponse = await handleBookingManagement(request, env)
+    if (managementResponse) return managementResponse
     const publicResponse = await handlePublicBooking(request, env)
     if (publicResponse) return publicResponse
     const authResponse = await handleAuth(request, env.booking_saas_db, env)
@@ -24,6 +28,15 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/booking-change-policy') {
+      if (request.method === 'GET') return Response.json(await env.booking_saas_db.prepare('SELECT booking_change_hours AS hours FROM organizations WHERE id = ?').bind(organizationId).first())
+      if (request.method !== 'PUT') return Response.json({ error: 'Método não permitido.' }, { status: 405 })
+      if (!account.subscription.can_manage) return subscriptionRequired()
+      const body = await jsonBody(request)
+      if (!body || !Number.isSafeInteger(body.hours) || (body.hours as number) < 0 || (body.hours as number) > 720) return Response.json({ error: 'Indica um número inteiro entre 0 e 720 horas.' }, { status: 400 })
+      await env.booking_saas_db.prepare('UPDATE organizations SET booking_change_hours = ? WHERE id = ?').bind(body.hours, organizationId).run()
+      return Response.json({ hours: body.hours })
+    }
     if (url.pathname === '/api/booking-payment-settings') {
       if (request.method !== 'GET' && !account.subscription.can_manage) return subscriptionRequired()
       return handleBookingPaymentSettings(request, env.booking_saas_db, organizationId)
@@ -39,7 +52,10 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (url.pathname === '/api/export' && request.method === 'GET') return exportData(env.booking_saas_db, account)
     const managesServices = url.pathname.startsWith('/api/services') && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)
     const managesBookings = url.pathname.startsWith('/api/bookings') && ['POST', 'PATCH', 'PUT'].includes(request.method)
-    if (!account.subscription.can_manage && (managesServices || managesBookings)) return subscriptionRequired()
+    if (!account.subscription.can_manage && (managesServices || managesBookings)) {
+      const body = request.method === 'PATCH' && /^\/api\/bookings\/[^/]+$/.test(url.pathname) ? await jsonBody(request.clone()) : null
+      if (!body || body.status !== 'canceled') return subscriptionRequired()
+    }
     if (url.pathname === '/api/profile' && request.method === 'PATCH') {
       return updateProfile(request, env.booking_saas_db, account)
     }
@@ -227,9 +243,9 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
               RETURNING id, name, duration_minutes, price_cents, is_active`)
               .bind(...projectionValues(id, now, options.duration_minutes, organizationId), ...values, id, organizationId, options.bookings_snapshot),
             db.prepare(`UPDATE bookings
-              SET end_at = strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes')
+              SET end_at = strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes'), version = version + 1
               WHERE changes() = 1 AND organization_id = ? AND service_id = ?
-                AND julianday(start_at) > julianday(?)`)
+                AND status = 'confirmed' AND julianday(start_at) > julianday(?)`)
               .bind(options.duration_minutes, organizationId, id, now),
           ])
           if (!updated.results.length) {

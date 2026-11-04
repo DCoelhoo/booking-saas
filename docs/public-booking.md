@@ -62,8 +62,8 @@ ao cliente. Repetir o pedido não volta a criar avisos. O email do cliente inclu
 serviço, data, hora, valor no local e referência. O envio real continua dependente
 do domínio remetente; a interface fornece a referência mesmo sem email.
 
-Cancelamento e reagendamento autónomos por link ainda não estão implementados.
-A confirmação pede ao cliente para contactar o negócio.
+As novas reservas incluem um link privado para o cliente cancelar ou reagendar,
+respeitando o prazo configurado pelo negócio. Consulta [gestão de marcações](booking-lifecycle.md).
 
 ## Desenvolvimento
 

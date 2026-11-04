@@ -5,10 +5,10 @@ import './PublicBookingPage.css'
 type Service = { id: string; name: string; duration_minutes: number; price_cents: number; payment: ReturnType<typeof paymentQuote> }
 type PageData = {
   business: { name: string; slug: string; description: string; contact_email: string; phone: string; logo_url: string; brand_color: string }
-  available: boolean; today: string; max_date: string; time_zone: string; services: Service[]
+  available: boolean; today: string; max_date: string; time_zone: string; services: Service[]; change_hours: number
 }
 type Slot = { start_time: string; end_time: string }
-type Receipt = { booking: { id: string; start_at: string; end_at: string; service_name: string; total_cents: number; on_site_due_cents: number } }
+type Receipt = { booking: { id: string; status: string; start_at: string; end_at: string; service_name: string; total_cents: number; on_site_due_cents: number } }
 const euro = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 const money = (cents: number) => euro.format(cents / 100)
 const dateLabel = (date: string) => new Intl.DateTimeFormat('pt-PT', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))
@@ -121,12 +121,12 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
       </aside>
       <section className="public-reservation" aria-label="Reservar uma marcação">
         {receipt ? <div className="public-success" role="status"><span className="public-success-symbol" aria-hidden="true">✓</span>
-          <h2>Marcação confirmada</h2><p>{receipt.booking.service_name}</p>
+          <h2>{({ confirmed: 'Marcação confirmada', canceled: 'Marcação cancelada', completed: 'Marcação concluída', no_show: 'Falta de comparência registada' } as Record<string, string>)[receipt.booking.status]}</h2><p>{receipt.booking.service_name}</p>
           <strong>{dateLabel(receipt.booking.start_at.slice(0, 10))}</strong>
           <p>{receipt.booking.start_at.slice(11, 16)}–{receipt.booking.end_at.slice(11, 16)} · Hora de Lisboa</p>
           <p>{receipt.booking.on_site_due_cents > 0 ? `A pagar no local: ${money(receipt.booking.on_site_due_cents)}` : 'Serviço gratuito'}</p>
           <p>Guarda a referência para contactares o negócio.</p><code>{receipt.booking.id}</code>
-          <p>Para cancelar ou reagendar, contacta diretamente o negócio.</p>
+          <p>Para cancelar ou reagendar, utiliza o link privado do email de confirmação. Se não receberes o email, contacta o negócio com esta referência.</p>
         </div> : !data.available ? <div className="public-empty"><h2>Marcações temporariamente indisponíveis</h2><p>Contacta o negócio para saberes mais.</p></div> : <>
           <ol className="public-steps" aria-label="Etapas da marcação">{['Serviço', 'Dia e hora', 'Confirmar'].map((label, i) => <li key={label} aria-current={stage === i + 1 ? 'step' : undefined}><span>{i + 1}</span>{label}</li>)}</ol>
           {error && <p className="public-error" role="alert">{error}</p>}
@@ -157,6 +157,7 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
           {stage === 3 && service && choice && <><h2>Está quase.</h2><p>Confirma a marcação e deixa os teus contactos.</p>
             <div className="public-summary"><strong>{service.name}</strong><span>{dateLabel(date)}</span><span>{choice.start_time}–{choice.end_time} · Hora de Lisboa</span>
               <strong>{service.price_cents === 0 ? 'Gratuito' : `${money(service.price_cents)} · Pagamento no local`}</strong></div>
+            <p>Podes cancelar ou reagendar pelo link privado do email até {data.change_hours} horas antes da marcação. Depois desse prazo, contacta o negócio.</p>
             <form onSubmit={submit}><fieldset disabled={busy}>
               <label className="public-field" htmlFor="public-name">Nome<input id="public-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={100} required /></label>
               <label className="public-field" htmlFor="public-email">Email<input id="public-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={254} required /></label>

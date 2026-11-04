@@ -198,3 +198,7 @@
     max-width: 420px;
   }
 }
+.booking-status { font-weight: 700; font-size: .85rem; }
+.booking-status-canceled { color: #9b2929; }
+.booking-status-completed { color: #176b45; }
+.booking-status-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }

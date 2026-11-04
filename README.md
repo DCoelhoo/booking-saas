@@ -40,6 +40,11 @@ personalização do negócio, horários reais e recolhe os contactos do cliente.
 Pagamento no local e serviços gratuitos podem ser reservados; serviços com
 pagamento antecipado aguardam a integração do fornecedor. Ver [página pública](docs/public-booking.md).
 
+Na agenda, as marcações podem ser concluídas, canceladas ou assinaladas como falta
+de comparência, mantendo o histórico. As novas reservas públicas incluem um link
+privado no email para cancelar ou reagendar. O prazo inicial é de 24 horas e pode
+ser alterado em Definições. Ver [gestão de marcações](docs/booking-lifecycle.md).
+
 Logótipos podem ser configurados através de um endereço HTTPS existente.
 O envio de imagens para R2, a verificação de email e a recuperação de palavra-passe
 ficam para as próximas etapas.

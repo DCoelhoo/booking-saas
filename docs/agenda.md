@@ -2,7 +2,8 @@
 
 `GET /api/bookings?date=YYYY-MM-DD` lista as marcações do dia.
 `POST /api/bookings` recebe `customer_name`, `service_id`, `date` e `start_time` (`HH:mm`).
-`DELETE /api/bookings/:id` elimina uma marcação, após confirmação na interface.
+`PATCH /api/bookings/:id` altera o estado com controlo de versão. `DELETE` cancela
+sem apagar o histórico. Consulta [estados e gestão pelo cliente](booking-lifecycle.md).
 
 As datas e horas representam a hora local do negócio. `start_at` e `end_at`
 são guardados no formato `YYYY-MM-DDTHH:mm:ss`, sem conversão para UTC.

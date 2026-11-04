@@ -31,6 +31,8 @@ export default function EmailPreviews() {
       <pre>{message.text}</pre>
       {message.kind === 'password_request' && message.text.match(/https?:\/\/\S+/)?.[0] &&
         <a href={message.text.match(/https?:\/\/\S+/)![0]} referrerPolicy="no-referrer">Abrir confirmação da palavra-passe</a>}
+      {message.kind === 'booking_confirmation' && message.text.match(/https?:\/\/\S+/)?.[0] &&
+        <a href={message.text.match(/https?:\/\/\S+/)![0]} referrerPolicy="no-referrer">Gerir marcação de teste</a>}
     </article>)}
   </details>
 }

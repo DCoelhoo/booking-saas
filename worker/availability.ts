@@ -78,13 +78,13 @@ export async function handleAvailability(request: Request, db: D1Database, organ
   const updated = await db.prepare(`WITH proposed AS (SELECT ? AS availability)
     UPDATE organizations SET availability = (SELECT availability FROM proposed)
     WHERE id = ? AND NOT EXISTS (
-      SELECT 1 FROM bookings b, proposed p WHERE b.organization_id = ?
+      SELECT 1 FROM bookings b, proposed p WHERE b.organization_id = ? AND b.status = 'confirmed'
         AND julianday(b.end_at) > julianday(?) AND NOT ${allowed}
     ) RETURNING availability`).bind(encoded, organizationId, organizationId, now).first()
   if (!updated) {
     const conflicts = await db.prepare(`WITH proposed AS (SELECT ? AS availability)
       SELECT b.id, b.customer_name, b.start_at, b.end_at, COUNT(*) OVER () AS total
-      FROM bookings b, proposed p WHERE b.organization_id = ?
+      FROM bookings b, proposed p WHERE b.organization_id = ? AND b.status = 'confirmed'
         AND julianday(b.end_at) > julianday(?) AND NOT ${allowed}
       ORDER BY b.start_at LIMIT 50`).bind(encoded, organizationId, now).all()
     return Response.json({ error: 'Estes horários entram em conflito com marcações ainda por concluir. Ajusta o horário ou resolve essas marcações antes de guardar.',

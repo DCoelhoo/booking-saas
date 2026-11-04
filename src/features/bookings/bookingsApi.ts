@@ -1,5 +1,7 @@
 import { secureFetch } from '../account/accountApi'
 export type Booking = {
+  status: 'confirmed' | 'completed' | 'canceled' | 'no_show'
+  version: number
   id: string
   service_id: string
   service_name: string
@@ -36,7 +38,9 @@ export async function createBooking(input: {
   return response.json()
 }
 
-export async function deleteBooking(id: string): Promise<void> {
-  const response = await secureFetch(`/api/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export async function updateBookingStatus(booking: Booking, status: Booking['status']): Promise<void> {
+  const response = await secureFetch(`/api/bookings/${encodeURIComponent(booking.id)}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, version: booking.version }),
+  })
   await check(response)
 }

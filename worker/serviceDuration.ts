@@ -11,7 +11,7 @@ export const projection = `WITH projected AS (
       THEN strftime('%Y-%m-%dT%H:%M:%S', start_at, '+' || ? || ' minutes')
       ELSE end_at END AS proposed_end,
     service_id = ? AND julianday(start_at) > julianday(?) AS affected
-  FROM bookings WHERE organization_id = ?
+  FROM bookings WHERE organization_id = ? AND status = 'confirmed'
 )`
 
 export const conflictCondition = `EXISTS (

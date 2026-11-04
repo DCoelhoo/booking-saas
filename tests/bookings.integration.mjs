@@ -55,7 +55,9 @@ test('agenda persists bookings, rejects conflicts and respects service availabil
     assert.equal((await request(`bookings/${booking.id}`, 'DELETE')).status, 204)
     await runtime.dispose()
     runtime = new Miniflare(options)
-    assert.equal((await (await request('bookings?date=2026-11-05')).json()).bookings.length, 2)
+    const history = (await (await request('bookings?date=2026-11-05')).json()).bookings
+    assert.equal(history.length, 3)
+    assert.equal(history.find((b) => b.id === booking.id).status, 'canceled')
     assert.equal((await request(`bookings/${booking.id}`, 'DELETE')).status, 404)
   } finally {
     await runtime.dispose()

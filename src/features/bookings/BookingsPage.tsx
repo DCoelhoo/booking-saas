@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { getServices, type Service } from '../services/servicesApi'
-import { getBookings, createBooking, deleteBooking, type Booking } from './bookingsApi'
+import { getBookings, createBooking, updateBookingStatus, type Booking } from './bookingsApi'
 import { getAvailability, type Availability } from '../account/availabilityApi'
 import { getBookingPaymentSettings, type BookingPaymentSettings } from '../account/bookingPaymentApi'
 import { paymentQuote } from '../../../shared/bookingPayments'
@@ -45,6 +45,7 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const ready = !loading && !loadError && data?.date === selectedDate
   const services = ready ? data.services : []
   const bookings = ready ? data.bookings : []
+  const now = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(new Date()).replace(' ', 'T')
   const selectedService = services.find((s) => s.id === serviceId)
   const quote = selectedService && ready ? paymentQuote(selectedService.price_cents, data.paymentSettings) : null
   const euro = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
@@ -95,17 +96,18 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
     }
   }
 
-  async function remove(booking: Booking) {
-    if (busy || !window.confirm(`Eliminar a marcação de ${booking.customer_name}?`)) return
+  async function changeStatus(booking: Booking, status: Booking['status']) {
+    const labels = { confirmed: 'Confirmada', completed: 'Concluída', canceled: 'Cancelada', no_show: 'Não compareceu' }
+    if (busy || !window.confirm(`Alterar a marcação de ${booking.customer_name} para «${labels[status]}»?`)) return
     setBusy(true)
     setError('')
     setNotice('')
     try {
-      await deleteBooking(booking.id)
-      setData((current) => current && ({ ...current, bookings: current.bookings.filter((b) => b.id !== booking.id) }))
-      setNotice('Marcação eliminada com sucesso.')
+      await updateBookingStatus(booking, status)
+      setReload((value) => value + 1)
+      setNotice(`Marcação atualizada: ${labels[status]}.`)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível eliminar a marcação.')
+      setError(cause instanceof Error ? cause.message : 'Não foi possível atualizar a marcação.')
       setReload((value) => value + 1)
     } finally {
       setBusy(false)
@@ -161,11 +163,16 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
         {bookings.map((booking) => <article className="agenda-card" key={booking.id}>
           <div className="agenda-time"><strong>{booking.start_at.slice(11, 16)}</strong><span>{booking.end_at.slice(11, 16)}</span></div>
           <div className="agenda-details"><strong>{booking.customer_name}</strong><span>{booking.service_name}</span>
+            <span className={`booking-status booking-status-${booking.status}`}>{({ confirmed: 'Confirmada', completed: 'Concluída', canceled: 'Cancelada', no_show: 'Não compareceu' })[booking.status]}</span>
             {booking.customer_email && <a href={`mailto:${booking.customer_email}`}>{booking.customer_email}</a>}
             {booking.customer_phone && <a href={`tel:${booking.customer_phone.replace(/[^+\d]/g, '')}`}>{booking.customer_phone}</a>}
             {booking.booking_source === 'public' && <span>Reserva online · {booking.on_site_due_cents === 0 ? 'Gratuito' : `${euro.format((booking.on_site_due_cents || 0) / 100)} a pagar no local`}</span>}
           </div>
-          <button type="button" className="agenda-delete" disabled={busy || showForm} onClick={() => void remove(booking)} aria-label={`Eliminar marcação de ${booking.customer_name}`}>Eliminar</button>
+          {booking.status === 'confirmed' && <div className="booking-status-actions" aria-label={`Estado da marcação de ${booking.customer_name}`}>
+            {canManage && <><button type="button" className="secondary-button" disabled={busy || showForm || booking.end_at > now} title={booking.end_at > now ? 'Disponível depois do fim da marcação' : undefined} onClick={() => void changeStatus(booking, 'completed')}>Concluir</button>
+              <button type="button" className="secondary-button" disabled={busy || showForm || booking.end_at > now} title={booking.end_at > now ? 'Disponível depois do fim da marcação' : undefined} onClick={() => void changeStatus(booking, 'no_show')}>Não compareceu</button></>}
+            <button type="button" className="agenda-delete" disabled={busy || showForm} onClick={() => void changeStatus(booking, 'canceled')}>Cancelar marcação</button>
+          </div>}
         </article>)}
       </div>}
     </section>
