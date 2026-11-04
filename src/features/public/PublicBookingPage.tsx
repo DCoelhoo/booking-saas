@@ -1,3 +1,4 @@
+import BookingCalendar from './BookingCalendar'
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import type { paymentQuote } from '../../../shared/bookingPayments'
 import './PublicBookingPage.css'
@@ -143,8 +144,8 @@ export default function PublicBookingPage({ slug, preview = false }: { slug: str
             <button type="button" className="public-primary" disabled={!service || busy} onClick={() => setStage(2)}>Escolher dia e hora →</button>
           </>}
           {stage === 2 && service && <><h2>Quando te dá jeito?</h2><p>{service.name} · {service.duration_minutes} minutos</p>
-            <label className="public-field" htmlFor="public-date">Dia<input id="public-date" type="date" value={date} min={data.today} max={data.max_date}
-              onChange={(e) => { setDate(e.target.value); setChoice(null); setError('') }} disabled={busy} required /></label>
+            <BookingCalendar value={date} min={data.today} max={data.max_date} disabled={busy}
+              onChange={value=>{setDate(value);setChoice(null);setError('')}} />
             <p className="public-timezone">Horários na hora de Lisboa · Europe/Lisbon</p>
             {slotsLoading && <p role="status">A procurar horários livres...</p>}
             {slotsError && <div><p className="public-error" role="alert">{slotsError}</p><button type="button" className="public-secondary" onClick={() => setSlotsRetry((n) => n + 1)}>Tentar novamente</button></div>}
