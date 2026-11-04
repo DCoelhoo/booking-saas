@@ -10,7 +10,7 @@ import {
 } from './servicesApi'
 import './ServicesPage.css'
 
-export default function ServicesPage() {
+export default function ServicesPage({ canManage }: { canManage: boolean }) {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -86,7 +86,7 @@ export default function ServicesPage() {
   }
 
   async function toggleService(service: Service) {
-    if (updatingId || saving) return
+    if (updatingId || saving || !canManage) return
     setUpdatingId(service.id)
     setActionError('')
     setNotice('')
@@ -104,7 +104,7 @@ export default function ServicesPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (saving || updatingId) return
+    if (saving || updatingId || !canManage) return
 
     const durationMinutes = Number(duration)
     const priceValue = Number(price)
@@ -175,7 +175,7 @@ export default function ServicesPage() {
           type="button"
           className="primary-button"
           onClick={() => { resetForm(); setNotice(''); setShowForm(true) }}
-          disabled={showForm || updatingId !== null || loading || !!error}
+          disabled={!canManage || showForm || updatingId !== null || loading || !!error}
         >
           + Novo serviço
         </button>
@@ -278,7 +278,7 @@ export default function ServicesPage() {
             <button
               type="submit"
               className="primary-button"
-              disabled={saving || updatingId !== null || (applyToFuture && !!preview?.has_conflicts)}
+              disabled={!canManage || saving || updatingId !== null || (applyToFuture && !!preview?.has_conflicts)}
             >
               {saving ? 'A processar...' : applyToFuture
                 ? preview ? 'Confirmar alterações' : 'Verificar marcações' : 'Guardar serviço'}
@@ -318,12 +318,12 @@ export default function ServicesPage() {
             </div>
             <div className="service-actions">
               <button type="button" onClick={() => editService(service)}
-                disabled={showForm || saving || updatingId !== null}
+                disabled={!canManage || showForm || saving || updatingId !== null}
                 aria-label={`Editar ${service.name}`}>
                 Editar
               </button>
               <button type="button" onClick={() => void toggleService(service)}
-                disabled={showForm || saving || updatingId !== null}
+                disabled={!canManage || showForm || saving || updatingId !== null}
                 aria-label={`${service.is_active === 1 ? 'Desativar' : 'Reativar'} ${service.name}`}>
                 {updatingId === service.id ? 'A guardar...' : service.is_active === 1 ? 'Desativar' : 'Reativar'}
               </button>

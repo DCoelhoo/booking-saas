@@ -1,8 +1,10 @@
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto'
 import { Buffer } from 'node:buffer'
 import type { D1Database } from '@cloudflare/workers-types'
+import { subscriptionAccess, type SubscriptionFields } from './subscriptions.ts'
 
 export type Account = {
+  subscription: ReturnType<typeof subscriptionAccess>
   user: { id: string; email: string; full_name: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
@@ -69,9 +71,15 @@ export async function getAccount(db: D1Database, userId: string): Promise<Accoun
   const user = await db.prepare('SELECT id, email, full_name, organization_id FROM users WHERE id = ?')
     .bind(userId).first<Account['user'] & { organization_id: string }>()
   if (!user) return null
-  const organization = await db.prepare(`SELECT id, name, slug, description, contact_email, phone, brand_color, logo_url
-    FROM organizations WHERE id = ?`).bind(user.organization_id).first<Account['organization']>()
-  return organization ? { user: { id: user.id, email: user.email, full_name: user.full_name }, organization } : null
+  const row = await db.prepare(`SELECT id, name, slug, description, contact_email, phone, brand_color, logo_url,
+    trial_started_at, trial_ends_at, subscription_status, paid_until
+    FROM organizations WHERE id = ?`).bind(user.organization_id).first<Account['organization'] & SubscriptionFields>()
+  if (!row) return null
+  const { trial_started_at, trial_ends_at, subscription_status, paid_until, ...organization } = row
+  return {
+    user: { id: user.id, email: user.email, full_name: user.full_name }, organization,
+    subscription: subscriptionAccess({ trial_started_at, trial_ends_at, subscription_status, paid_until }),
+  }
 }
 export async function authenticate(request: Request, db: D1Database): Promise<Account | null> {
   const token = cookieToken(request)
@@ -148,10 +156,11 @@ export async function handleAuth(request: Request, db: D1Database): Promise<Resp
         const orgId = crypto.randomUUID()
         const hashed = await passwordHash(body.password)
         const session = newSession(db, userId)
+        const trialStartedAt = Date.now()
         try {
           await db.batch([
-            db.prepare('INSERT INTO organizations (id, name, slug, contact_email) VALUES (?, ?, ?, ?)')
-              .bind(orgId, business_name.trim(), slug, email),
+            db.prepare('INSERT INTO organizations (id, name, slug, contact_email, trial_started_at, trial_ends_at) VALUES (?, ?, ?, ?, ?, ?)')
+              .bind(orgId, business_name.trim(), slug, email, trialStartedAt, trialStartedAt + 14 * 86_400_000),
             db.prepare('INSERT INTO users (id, organization_id, email, full_name, password_hash) VALUES (?, ?, ?, ?, ?)')
               .bind(userId, orgId, email, full_name.trim(), hashed),
             session.statement,

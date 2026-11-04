@@ -14,6 +14,9 @@ npm run dev
 Abre o endereço apresentado no terminal. Escolhe «Ainda não tenho conta — criar
 conta» e preenche o teu nome, o negócio, o link, o email e a palavra-passe.
 O registo entra automaticamente na nova conta.
+O negócio começa com 14 dias de teste, sem cartão e sem cobrança automática.
+O dashboard mostra os dias restantes. Depois do teste, a consulta, a eliminação
+de marcações existentes, a gestão da conta e a exportação JSON mantêm-se disponíveis.
 
 Em **Definições** (ou **Mais**, no telemóvel), podes editar o perfil e a identidade
 do negócio, ver uma pré-visualização e alterar a palavra-passe.
@@ -36,4 +39,8 @@ npm run lint
 Os testes fazem o build e usam bases D1 temporárias, sem modificar os teus dados
 de desenvolvimento. O estado local de `.wrangler/` é ignorado pelo Git.
 
-Mais detalhes: [contas](docs/accounts.md) e [agenda](docs/agenda.md).
+Os pagamentos ainda não estão ativos. Os métodos definidos para a integração
+são MB WAY, cartões de débito/crédito e referências Multibanco. A escolha do
+fornecedor tem de confirmar o suporte a pagamentos B2B e às renovações pretendidas.
+
+Mais detalhes: [contas](docs/accounts.md), [agenda](docs/agenda.md) e [subscrições](docs/subscriptions.md).

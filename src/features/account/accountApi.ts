@@ -1,4 +1,9 @@
 export type Account = {
+  subscription: {
+    status: 'trialing' | 'active' | 'expired'; can_manage: boolean
+    trial_ends_at: number; access_until: number; days_remaining: number
+    monthly_price_cents: number; currency: string; billing_available: boolean
+  }
   user: { id: string; email: string; full_name: string }
   organization: {
     id: string; name: string; slug: string; description: string; contact_email: string
@@ -9,6 +14,7 @@ export type Account = {
 export async function secureFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const response = await fetch(input, { ...init, credentials: 'same-origin' })
   if (response.status === 401) window.dispatchEvent(new Event('session-expired'))
+  if (response.status === 402) window.dispatchEvent(new Event('subscription-expired'))
   return response
 }
 
@@ -18,6 +24,7 @@ export async function accountRequest<T>(path: string, method = 'GET', body?: unk
     ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
   })
   if (!response.ok) {
+    if (response.status === 402) window.dispatchEvent(new Event('subscription-expired'))
     const data = await response.json().catch(() => null)
     if (response.status === 401 && !['auth/session', 'auth/login'].includes(path)) {
       window.dispatchEvent(new Event('session-expired'))

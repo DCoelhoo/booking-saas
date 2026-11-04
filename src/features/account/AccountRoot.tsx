@@ -33,6 +33,28 @@ export default function AccountRoot() {
     return () => window.removeEventListener('session-expired', expire)
   }, [])
 
+  const userId = account?.user.id
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    async function refresh() {
+      try {
+        const next = await currentAccount()
+        if (!cancelled) setAccount(next)
+      } catch { /* Keep the session visible during temporary network failures. The API still checks access. */ }
+    }
+    const timer = window.setInterval(() => void refresh(), 60_000)
+    const focus = () => void refresh()
+    window.addEventListener('focus', focus)
+    window.addEventListener('subscription-expired', focus)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', focus)
+      window.removeEventListener('subscription-expired', focus)
+    }
+  }, [userId])
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy) return
@@ -68,7 +90,7 @@ export default function AccountRoot() {
     <section className="account-card">
       <span className="account-brand">Booking SaaS</span>
       <h1>{register ? 'Cria a tua conta' : 'Bem-vindo de volta'}</h1>
-      <p>{register ? 'Configura o teu negócio e começa a organizar as marcações.' : 'Inicia sessão para gerir o teu negócio.'}</p>
+      <p>{register ? 'Experimenta durante 14 dias, sem cartão e sem cobranças automáticas. Depois, o plano é de 10 €/mês por negócio.' : 'Inicia sessão para gerir o teu negócio.'}</p>
       <form className="account-form" onSubmit={submit}>
         <fieldset disabled={busy}>
           {register && <>

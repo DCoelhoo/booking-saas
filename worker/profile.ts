@@ -1,10 +1,15 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { getAccount, jsonBody, validEmail, validSlug, type Account } from './auth.ts'
+import { subscriptionRequired } from './subscriptions.ts'
 
 export async function updateProfile(request: Request, db: D1Database, account: Account): Promise<Response> {
   const body = await jsonBody(request)
   if (!body) return Response.json({ error: 'Dados inválidos.' }, { status: 400 })
   const { full_name, name, slug, description, contact_email, phone, brand_color, logo_url } = body
+  if (!account.subscription.can_manage && Object.entries({ name, slug, description, contact_email, phone, brand_color, logo_url })
+    .some(([key, value]) => value !== account.organization[key as keyof Account['organization']])) {
+    return subscriptionRequired()
+  }
   if (typeof full_name !== 'string' || !full_name.trim() || full_name.trim().length > 100 ||
       typeof name !== 'string' || !name.trim() || name.trim().length > 100 || !validSlug(slug) ||
       typeof description !== 'string' || description.length > 1000 ||

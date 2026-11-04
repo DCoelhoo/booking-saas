@@ -22,7 +22,7 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
   const cookieOf = (response) => response.headers.get('Set-Cookie').split(';')[0]
   try {
     let db = await runtime.getD1Database('booking_saas_db')
-    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql']) {
+    for (const file of ['0001_initial_schema.sql', '0002_accounts.sql', '0003_subscription_trials.sql']) {
       const schema = await readFile(`migrations/${file}`, 'utf8')
       for (const statement of schema.split(';').filter((part) => part.trim())) await db.prepare(statement).run()
     }
@@ -39,6 +39,10 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
     assert.equal(registered.headers.get('Cache-Control'), 'no-store')
     let cookieA = cookieOf(registered)
     let accountA = await registered.json()
+    const trialEndsAt = accountA.subscription.trial_ends_at
+    assert.equal(accountA.subscription.status, 'trialing')
+    assert.ok(trialEndsAt > Date.now() + 14 * 86_400_000 - 60_000)
+    assert.ok(trialEndsAt <= Date.now() + 14 * 86_400_000)
     assert.equal(accountA.user.email, 'owner@example.com')
     assert.notEqual(accountA.organization.id, 'org-demo')
     assert.equal('password_hash' in accountA.user, false)
@@ -88,6 +92,7 @@ test('accounts, sessions, profiles and tenant isolation work in the Cloudflare r
     assert.equal((await request('auth/login', 'POST', { email: credentials.email, password: 'palavra passe errada' })).status, 401)
     const loggedIn = await request('auth/login', 'POST', credentials, cookieA)
     assert.equal(loggedIn.status, 200)
+    assert.equal((await loggedIn.clone().json()).subscription.trial_ends_at, trialEndsAt)
     const oldCookie = cookieA
     cookieA = cookieOf(loggedIn)
     assert.notEqual(cookieA, oldCookie)

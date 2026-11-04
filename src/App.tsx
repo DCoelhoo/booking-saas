@@ -5,6 +5,7 @@ import ServicesPage from './features/services/ServicesPage'
 import BookingsPage from './features/bookings/BookingsPage'
 import SettingsPage from './features/account/SettingsPage'
 import DashboardPage from './features/account/DashboardPage'
+import SubscriptionBanner from './features/account/SubscriptionBanner'
 import type { Account } from './features/account/accountApi'
 
 type Page =
@@ -80,12 +81,13 @@ function App({ account, onAccountChange, onLogout }: {
         </header>
 
         {logoutError && <p className="booking-error" role="alert">{logoutError}</p>}
+        <SubscriptionBanner subscription={account.subscription} onViewPlan={() => setActivePage('Definições')} />
         {activePage === 'Dashboard' ? (
           <DashboardPage name={account.user.full_name} />
         ) : activePage === 'Serviços' ? (
-          <ServicesPage />
+          <ServicesPage canManage={account.subscription.can_manage} />
         ) : activePage === 'Marcações' ? (
-          <BookingsPage />
+          <BookingsPage canManage={account.subscription.can_manage} />
         ) : activePage === 'Definições' ? (
           <SettingsPage account={account} onChange={onAccountChange} />
         ) : (

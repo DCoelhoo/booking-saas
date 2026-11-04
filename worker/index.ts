@@ -1,6 +1,8 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { authenticate, checkMutation, handleAuth } from './auth.ts'
 import { updateProfile } from './profile.ts'
+import { subscriptionRequired } from './subscriptions.ts'
+import { exportData } from './export.ts'
 import { handleBookings } from './bookings.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
@@ -18,6 +20,11 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     const account = await authenticate(request, env.booking_saas_db)
     if (!account) return Response.json({ error: 'Inicia sessão para continuar.' }, { status: 401 })
     const organizationId = account.organization.id
+    if (url.pathname === '/api/subscription' && request.method === 'GET') return Response.json(account.subscription)
+    if (url.pathname === '/api/export' && request.method === 'GET') return exportData(env.booking_saas_db, account)
+    const managesServices = url.pathname.startsWith('/api/services') && ['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)
+    const managesBookings = url.pathname.startsWith('/api/bookings') && ['POST', 'PATCH', 'PUT'].includes(request.method)
+    if (!account.subscription.can_manage && (managesServices || managesBookings)) return subscriptionRequired()
     if (url.pathname === '/api/profile' && request.method === 'PATCH') {
       return updateProfile(request, env.booking_saas_db, account)
     }

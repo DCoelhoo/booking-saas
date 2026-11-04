@@ -7,7 +7,7 @@ function localDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-export default function BookingsPage() {
+export default function BookingsPage({ canManage }: { canManage: boolean }) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()))
   const [data, setData] = useState<{ date: string; bookings: Booking[]; services: Service[] } | null>(null)
   const [reload, setReload] = useState(0)
@@ -64,7 +64,7 @@ export default function BookingsPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (busy || !ready) return
+    if (busy || !ready || !canManage) return
     setError('')
     setNotice('')
     if (!selectedService || !customer.trim()) {
@@ -108,7 +108,7 @@ export default function BookingsPage() {
     <section className="bookings-page">
       <div className="bookings-heading">
         <div><h2>Agenda</h2><p>Gere as marcações do teu negócio.</p></div>
-        <button type="button" className="primary-button" disabled={!ready || busy || showForm || services.length === 0}
+        <button type="button" className="primary-button" disabled={!canManage || !ready || busy || showForm || services.length === 0}
           onClick={() => { setError(''); setNotice(''); setServiceId(services[0].id); setShowForm(true) }}>
           + Nova marcação
         </button>
@@ -138,7 +138,7 @@ export default function BookingsPage() {
           {selectedService && <p>Termina às <strong>{endTime}</strong></p>}
           <div className="booking-form-actions">
             <button type="button" className="secondary-button" disabled={busy} onClick={() => { setShowForm(false); setError('') }}>Cancelar</button>
-            <button type="submit" className="primary-button" disabled={busy || !ready || !selectedService}>{busy ? 'A guardar...' : 'Guardar'}</button>
+            <button type="submit" className="primary-button" disabled={!canManage || busy || !ready || !selectedService}>{busy ? 'A guardar...' : 'Guardar'}</button>
           </div>
         </form>
       )}
