@@ -102,7 +102,7 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
 
   if (loading) return <main className="public-loading"><p role="status">A carregar marcações...</p></main>
   if (loadError || !data) return <main className="public-loading"><h1>Não foi possível abrir a página</h1>
-    <p role="alert">{loadError}</p><button type="button" onClick={() => setRefresh((n) => n + 1)}>Tentar novamente</button><a href="/">Área do negócio</a></main>
+    <p role="alert">{loadError}</p><button type="button" onClick={() => setRefresh((n) => n + 1)}>Tentar novamente</button><a href="/conta">Área do negócio</a></main>
   const business = data.business
   const initials = business.name.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()
   return <div className="public-booking" style={{ '--public-brand': business.brand_color, '--public-ink': brandInk(business.brand_color) } as CSSProperties}>
@@ -173,6 +173,6 @@ export default function PublicBookingPage({ slug }: { slug: string }) {
         </>}
       </section>
     </main>
-    <footer className="public-footer"><span>Marcações com Booking SaaS</span><a href="/">Área do negócio</a></footer>
+    <footer className="public-footer"><span>Marcações com Booking SaaS</span><a href="/conta">Área do negócio</a></footer>
   </div>
 }

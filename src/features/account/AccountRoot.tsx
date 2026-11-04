@@ -15,7 +15,7 @@ export default function AccountRoot() {
   const [loading, setLoading] = useState(true)
   const [sessionError, setSessionError] = useState('')
   const [retry, setRetry] = useState(0)
-  const [register, setRegister] = useState(false)
+  const [register, setRegister] = useState(()=>new URLSearchParams(window.location.search).get('criar') === '1')
   const [forgot, setForgot] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +28,7 @@ export default function AccountRoot() {
   const [slugEdited, setSlugEdited] = useState(false)
   const [passwordToken, setPasswordToken] = useState(passwordLinkToken)
   const [invitation, setInvitation] = useState(()=>new URLSearchParams(window.location.hash.slice(1)).has('staff-invitation'))
+  useEffect(()=>{ document.title = 'A minha conta · Booking SaaS' },[])
 
   useEffect(() => {
     let cancelled = false
@@ -104,7 +105,7 @@ export default function AccountRoot() {
 
   return <main className="account-shell">
     <section className="account-card">
-      <span className="account-brand">Booking SaaS</span>
+      <a className="account-brand" href="/">Booking SaaS</a>
       <h1>{register ? 'Cria a tua conta' : 'Bem-vindo de volta'}</h1>
       <p>{register ? 'Experimenta durante 14 dias, sem cartão e sem cobranças automáticas. Depois, o plano é de 10 €/mês por negócio.' : 'Inicia sessão para gerir o teu negócio.'}</p>
       <form className="account-form" onSubmit={submit}>

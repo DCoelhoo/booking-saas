@@ -12,11 +12,12 @@ npx wrangler d1 migrations apply booking-saas-db --local
 npm run dev
 ```
 
-Abre o endereço apresentado no terminal. Escolhe «Ainda não tenho conta — criar
-conta» e preenche o teu nome, o negócio, o link, o email e a palavra-passe.
+Abre o endereço apresentado no terminal para ver a página de apresentação.
+Escolhe «Experimentar» para criar conta ou «Entrar» para abrir a área de gestão
+em `/conta`. Preenche o teu nome, o negócio, o link, o email e a palavra-passe.
 O registo entra automaticamente na nova conta.
 O negócio começa com 14 dias de teste, sem cartão e sem cobrança automática.
-O dashboard mostra os dias restantes. Depois do teste, a consulta, a eliminação
+O dashboard mostra os dias restantes. Depois do teste, a consulta, o cancelamento
 de marcações existentes, a gestão da conta e a exportação JSON mantêm-se disponíveis.
 
 Em **Definições** (ou **Mais**, no telemóvel), podes editar o perfil e a identidade

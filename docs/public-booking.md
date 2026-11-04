@@ -1,6 +1,6 @@
 # Página pública de marcações
 
-O link de cada negócio é `/<slug>`; `/` continua a ser a área de gestão.
+O link de cada negócio é `/<slug>`; `/` é a página de apresentação e `/conta` é a área de gestão.
 Em Definições, a secção «A tua página de marcações» permite abrir e copiar o
 endereço guardado. Só são encontrados negócios associados a uma conta.
 
