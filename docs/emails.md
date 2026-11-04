@@ -9,8 +9,8 @@ Eventos implementados:
 - Nova marcação: aviso para o email de contacto do negócio ou, se vazio, para o
   email de acesso. Inclui cliente, serviço, data e início/fim no horário do negócio.
 
-Esta etapa não envia confirmações ao cliente da marcação, pois ainda não é
-recolhido o email desse cliente. O email de boas-vindas não verifica a titularidade
+Reservas feitas pela página pública também geram confirmação para o email do
+cliente. Marcações internas ainda não recolhem esse email. O email de boas-vindas não verifica a titularidade
 do endereço, e a recuperação de palavra-passe sem a palavra-passe atual ainda
 é uma funcionalidade distinta a implementar.
 

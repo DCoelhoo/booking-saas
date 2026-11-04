@@ -96,6 +96,7 @@
 .account-form .payment-choice input { width: 20px; min-height: 20px; flex-shrink: 0; }
 .booking-payment-settings select { min-height: 46px; border: 1px solid #dce2ec; border-radius: 9px; padding: 10px; font: inherit; background: white; }
 .payment-example { padding: 14px; margin-top: 16px; border: 1px solid #dce2ec; border-radius: 9px; }
+.public-link-panel a { display: block; color: #315cf5; overflow-wrap: anywhere; margin: 16px 0; }
 @media (max-width: 600px) {
   .availability-day { flex-direction: column; }
   .availability-periods { width: 100%; }

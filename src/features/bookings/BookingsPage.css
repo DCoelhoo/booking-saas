@@ -161,6 +161,8 @@
   color: #7a8597;
 }
 
+.agenda-details a { color: #315cf5; font-size: 12px; overflow-wrap: anywhere; }
+
 .agenda-delete {
   border: 0;
   background: transparent;

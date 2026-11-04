@@ -82,12 +82,12 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
           <label htmlFor="profile-slug">Link do negócio</label>
           <input id="profile-slug" value={profile.slug} onChange={(e) => field('slug', e.target.value)}
             minLength={3} maxLength={63} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} required />
-          <small>/{profile.slug} · A página pública será disponibilizada numa próxima etapa.</small>
+          <small>O link muda quando guardares uma alteração deste campo.</small>
           <label htmlFor="profile-description">Descrição</label>
           <textarea id="profile-description" value={profile.description} onChange={(e) => field('description', e.target.value)} maxLength={1000} rows={4} />
           <label htmlFor="profile-contact-email">Email de contacto do negócio</label>
           <input id="profile-contact-email" type="email" value={profile.contact_email} onChange={(e) => field('contact_email', e.target.value)} maxLength={254} />
-          <small>Recebe os avisos de novas marcações. Se estiver vazio, usamos o email de acesso.</small>
+          <small>Visível na página pública e recebe os avisos de novas marcações. Se estiver vazio, os avisos vão para o email de acesso.</small>
           <label htmlFor="profile-phone">Telefone</label>
           <input id="profile-phone" type="tel" value={profile.phone} onChange={(e) => field('phone', e.target.value)} maxLength={40} />
           <label htmlFor="profile-color">Cor principal</label>
@@ -109,6 +109,17 @@ export default function SettingsPage({ account, onChange }: { account: Account; 
         <code>/{profile.slug}</code>
       </aside>
     </div>
+    <section className="panel public-link-panel">
+      <h2>A tua página de marcações</h2>
+      <p>Partilha este endereço com os teus clientes. É usado o link que já está guardado no perfil.</p>
+      <a href={`/${account.organization.slug}`} target="_blank" rel="noopener noreferrer">{window.location.origin}/{account.organization.slug}</a>
+      <button type="button" className="secondary-button" onClick={() => {
+        void navigator.clipboard.writeText(`${window.location.origin}/${account.organization.slug}`)
+          .then(() => { setMessage('Link copiado.'); setError('') })
+          .catch(() => setError('Não foi possível copiar. Seleciona o endereço acima para o copiar.'))
+      }}>Copiar link</button>
+      <p>As reservas respeitam a disponibilidade e as regras de pagamento do negócio.</p>
+    </section>
     {error && <p className="booking-error" role="alert">{error}</p>}
     {message && <p role="status">{message}</p>}
     <form className="account-form panel password-form" onSubmit={changePassword}>

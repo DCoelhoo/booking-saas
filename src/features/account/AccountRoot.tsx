@@ -113,7 +113,7 @@ export default function AccountRoot() {
             <label htmlFor="account-slug">Link do negócio</label>
             <input id="account-slug" value={slug} onChange={(e) => { setSlugEdited(true); setSlug(e.target.value) }}
               minLength={3} maxLength={63} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} required aria-describedby="slug-help" />
-            <small id="slug-help">/{slug || 'o-teu-negocio'} · Endereço reservado para a futura página de marcações.</small>
+            <small id="slug-help">/{slug || 'o-teu-negocio'} · O endereço da tua página pública de marcações.</small>
           </>}
           <label htmlFor="account-email">Email</label>
           <input id="account-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} required />

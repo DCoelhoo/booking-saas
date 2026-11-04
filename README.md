@@ -26,7 +26,7 @@ as pausas e os dias de férias/encerramento. A agenda usa esses horários para v
 as marcações. Alterações incompatíveis com marcações ainda por concluir são recusadas.
 Em **Como os clientes pagam as marcações**, escolhe pagamento no local, total online
 ou sinal online (percentagem ou valor fixo). A configuração fica guardada para a
-futura página pública; a cobrança online ainda não está ativa. Ver [regras de pagamento](docs/booking-payments.md).
+página pública; a cobrança online ainda não está ativa. Ver [regras de pagamento](docs/booking-payments.md).
 
 Os emails de criação de conta, alteração de palavra-passe e novas marcações podem
 ser testados em **Definições → Emails locais — não enviados**. A alteração de
@@ -34,8 +34,11 @@ palavra-passe é confirmada num link com validade de 30 minutos. Os envios reais
 dependem da configuração de um domínio remetente; ver [emails](docs/emails.md).
 
 Cada conta começa com um negócio independente. Os serviços e marcações antigos de
-`org-demo` mantêm-se na D1, separados das contas novas. O link escolhido fica
-reservado; a página pública de marcações será implementada na próxima etapa.
+`org-demo` mantêm-se na D1, separados das contas novas. Em **A tua página de marcações**,
+abre ou copia o link `/<slug>` para testar reservas sem conta. A página usa a
+personalização do negócio, horários reais e recolhe os contactos do cliente.
+Pagamento no local e serviços gratuitos podem ser reservados; serviços com
+pagamento antecipado aguardam a integração do fornecedor. Ver [página pública](docs/public-booking.md).
 
 Logótipos podem ser configurados através de um endereço HTTPS existente.
 O envio de imagens para R2, a verificação de email e a recuperação de palavra-passe

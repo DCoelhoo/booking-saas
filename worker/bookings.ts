@@ -1,7 +1,8 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import { availabilityCondition, validDate } from './availability.ts'
+import { bookingNotification } from './bookingNotifications.ts'
 
-const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, s.name AS service_name`
+const columns = `b.id, b.service_id, b.customer_name, b.start_at, b.end_at, b.customer_email, b.customer_phone, b.booking_source, b.total_cents, b.online_due_cents, b.on_site_due_cents, b.payment_mode, COALESCE(b.service_name_snapshot, s.name) AS service_name`
 
 export async function handleBookings(request: Request, db: D1Database, organizationId: string, emailPreview = false): Promise<Response | null> {
   const url = new URL(request.url)
@@ -59,20 +60,7 @@ export async function handleBookings(request: Request, db: D1Database, organizat
         ) RETURNING id`).bind(startAt, startAt, service_id, organizationId, id, customer_name.trim())
       const [inserted] = await db.batch([
         insertBooking,
-        db.prepare(`INSERT INTO email_outbox (id, organization_id, kind, payload, status)
-          SELECT ?, b.organization_id, 'booking_created', json_object(
-            'to', CASE WHEN o.contact_email != '' THEN o.contact_email ELSE u.email END,
-            'subject', 'Nova marcação — ' || o.name,
-            'text', 'Recebeste uma nova marcação.' || char(10) || char(10) ||
-              'Cliente: ' || b.customer_name || char(10) || 'Serviço: ' || s.name || char(10) ||
-              'Data: ' || substr(b.start_at, 1, 10) || char(10) ||
-              'Horário: ' || substr(b.start_at, 12, 5) || '–' || substr(b.end_at, 12, 5) || char(10) ||
-              'As horas correspondem ao horário local do negócio.'), ?
-          FROM bookings b JOIN organizations o ON o.id = b.organization_id
-          JOIN users u ON u.organization_id = b.organization_id
-          JOIN services s ON s.id = b.service_id AND s.organization_id = b.organization_id
-          WHERE b.id = ? AND b.organization_id = ?`)
-          .bind(`booking-created:${id}`, emailPreview ? 'preview' : 'pending', id, organizationId),
+        bookingNotification(db, id, organizationId, emailPreview),
       ])
       if (!inserted.results.length) return Response.json({ error: 'O horário ou o serviço deixou de estar disponível. Atualiza a agenda.' }, { status: 409 })
       const booking = await db.prepare(`SELECT ${columns} FROM bookings b

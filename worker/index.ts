@@ -7,6 +7,7 @@ import { exportData } from './export.ts'
 import { handleAvailability } from './availability.ts'
 import { handleBookingPaymentSettings, servicePaymentQuote } from './bookingPayments.ts'
 import { handleBookings } from './bookings.ts'
+import { handlePublicBooking } from './publicBooking.ts'
 import { businessNow, conflictCondition, previewDuration, projection, projectionValues, snapshot } from './serviceDuration.ts'
 
 type Env = EmailEnv
@@ -16,6 +17,8 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (url.pathname === '/api/health') return Response.json({ status: 'ok', application: 'booking-saas' })
     const invalidMutation = checkMutation(request)
     if (invalidMutation) return invalidMutation
+    const publicResponse = await handlePublicBooking(request, env)
+    if (publicResponse) return publicResponse
     const authResponse = await handleAuth(request, env.booking_saas_db, env)
     if (authResponse) return authResponse
     const account = await authenticate(request, env.booking_saas_db)

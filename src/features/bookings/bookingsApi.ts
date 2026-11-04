@@ -6,6 +6,11 @@ export type Booking = {
   customer_name: string
   start_at: string
   end_at: string
+  customer_email?: string
+  customer_phone?: string
+  booking_source?: string
+  total_cents?: number | null
+  on_site_due_cents?: number | null
 }
 
 async function check(response: Response): Promise<void> {

@@ -33,14 +33,14 @@ não altera as regras. Após o teste, a consulta permanece disponível e a ediç
 ## Estado atual e integração futura
 
 As cobranças online ainda não estão disponíveis. A interface permite guardar a
-preferência para preparar a página pública e mostra essa limitação. Marcações
+preferência e mostra essa limitação. A página pública aceita pagamento no local e serviços gratuitos. Marcações
 internas no dashboard continuam possíveis; não efetuam nem confirmam pagamentos.
 A simulação apresentada num formulário é apenas a regra atual, não um recibo.
 
 O endpoint de simulação devolve `online_payments_available: false`. O campo
 `can_confirm_public_booking` só pode ser verdadeiro com acesso de gestão ativo
 e sem valor online exigido. Esse indicador não substitui a validação de horários,
-conflitos ou outros dados da reserva na futura página pública.
+conflitos ou outros dados da reserva na página pública.
 
 Antes de aceitar reservas online com sinal ou pagamento integral, a integração
 tem de ligar a conta de pagamentos do negócio, recalcular os valores no servidor,

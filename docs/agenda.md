@@ -38,7 +38,7 @@ marcações que ainda não começaram, usando a hora atual de Europe/Lisbon.
 A confirmação revalida a agenda e o horário de funcionamento e aplica o serviço
 e as marcações numa transação. Se as marcações afetadas mudarem desde a revisão,
 ou surgirem conflitos, a operação inteira é recusada com HTTP 409.
-Os nomes dos serviços apresentados correspondem ao nome atual do serviço.
+Nas marcações internas, os nomes correspondem ao nome atual do serviço. As reservas públicas guardam o nome, o preço e a regra de pagamento acordados na confirmação.
 
 Os endpoints de gestão exigem sessão. O negócio é obtido a partir da conta
 autenticada; identificadores enviados pelo cliente não escolhem a organização.

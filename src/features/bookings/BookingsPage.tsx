@@ -160,7 +160,11 @@ export default function BookingsPage({ canManage }: { canManage: boolean }) {
         {bookings.length === 0 && <div className="empty-agenda"><p>Não existem marcações neste dia.</p></div>}
         {bookings.map((booking) => <article className="agenda-card" key={booking.id}>
           <div className="agenda-time"><strong>{booking.start_at.slice(11, 16)}</strong><span>{booking.end_at.slice(11, 16)}</span></div>
-          <div className="agenda-details"><strong>{booking.customer_name}</strong><span>{booking.service_name}</span></div>
+          <div className="agenda-details"><strong>{booking.customer_name}</strong><span>{booking.service_name}</span>
+            {booking.customer_email && <a href={`mailto:${booking.customer_email}`}>{booking.customer_email}</a>}
+            {booking.customer_phone && <a href={`tel:${booking.customer_phone.replace(/[^+\d]/g, '')}`}>{booking.customer_phone}</a>}
+            {booking.booking_source === 'public' && <span>Reserva online · {booking.on_site_due_cents === 0 ? 'Gratuito' : `${euro.format((booking.on_site_due_cents || 0) / 100)} a pagar no local`}</span>}
+          </div>
           <button type="button" className="agenda-delete" disabled={busy || showForm} onClick={() => void remove(booking)} aria-label={`Eliminar marcação de ${booking.customer_name}`}>Eliminar</button>
         </article>)}
       </div>}
