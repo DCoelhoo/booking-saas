@@ -26,21 +26,21 @@
 }
 
 .primary-button {
-  background: #315cf5;
+  background: var(--color-primary);
   color: white;
   border: none;
 }
 
 .secondary-button {
   background: white;
-  border: 1px solid #dce2ec;
-  color: #172033;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .service-form,
 .service-card {
   background: white;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 18px;
 }
@@ -60,7 +60,7 @@
   width: 100%;
   min-height: 46px;
   padding: 12px;
-  border: 1px solid #dce2ec;
+  border: 1px solid var(--color-border);
   border-radius: 9px;
   font: inherit;
   font-size: 16px;
@@ -79,7 +79,7 @@
 }
 
 .duration-preview {
-  border: 1px solid #dce2ec;
+  border: 1px solid var(--color-border);
   border-radius: 9px;
   padding: 12px;
 }
@@ -120,12 +120,12 @@
 }
 
 .service-info span {
-  color: #7a8597;
+  color: var(--color-muted);
   font-size: 13px;
 }
 
 .service-price {
-  color: #315cf5;
+  color: var(--color-primary);
   font-size: 18px;
 }
 
@@ -137,7 +137,7 @@
 .service-actions button {
   flex: 1;
   min-height: 44px;
-  border: 1px solid #dce2ec;
+  border: 1px solid var(--color-border);
   background: white;
   border-radius: 9px;
   cursor: pointer;
@@ -151,13 +151,13 @@
 }
 
 .service-status.is-active {
-  background: #eef2ff;
-  color: #315cf5;
+  background: var(--color-soft);
+  color: var(--color-primary);
 }
 
 .service-status.is-inactive {
-  background: #e7eaf0;
-  color: #172033;
+  background: var(--color-border);
+  color: var(--color-text);
 }
 
 .services-page button:disabled {

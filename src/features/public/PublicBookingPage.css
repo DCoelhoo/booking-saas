@@ -1,62 +1,62 @@
-.public-booking { min-height: 100dvh; background: #f8f9fc; color: #172033; --public-brand: #315cf5; --public-ink: white; }
+.public-booking { min-height: 100dvh; background: var(--color-background); color: var(--color-text); --public-brand: var(--color-primary); --public-ink: white; }
 .public-header, .public-footer { max-width: 1180px; margin: 0 auto; padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.public-header { border-bottom: 1px solid #e7eaf0; }
+.public-header { border-bottom: 1px solid var(--color-border); }
 .public-header > a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0; overflow-wrap: anywhere; }
-.public-header > span, .public-footer { color: #647084; font-size: 13px; }
+.public-header > span, .public-footer { color: var(--color-muted); font-size: 13px; }
 .public-mark { background: var(--public-brand); color: var(--public-ink); border-radius: 13px; min-width: 44px; height: 44px; display: grid; place-items: center; font-weight: 700; }
 .public-layout { max-width: 1180px; margin: 0 auto; padding: 56px 24px 72px; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 64px; align-items: start; }
 .public-business { padding-top: 24px; min-width: 0; }
 .public-logo { width: 88px; height: 88px; object-fit: contain; margin-bottom: 24px; border-radius: 14px; background: white; }
 .public-logo[hidden] { display: none; }
-.public-eyebrow { text-transform: uppercase; letter-spacing: 1.8px; font-size: 11px; font-weight: 700; color: #647084; display: block; }
+.public-eyebrow { text-transform: uppercase; letter-spacing: 1.8px; font-size: 11px; font-weight: 700; color: var(--color-muted); display: block; }
 .public-business h1 { font-size: clamp(28px, 3.8vw, 44px); line-height: 1.16; letter-spacing: -1.6px; margin: 18px 0; overflow-wrap: anywhere; }
-.public-description { font-size: 16px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: #647084; }
+.public-description { font-size: 16px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-muted); }
 .public-facts { margin-top: 32px; display: grid; gap: 12px; }
 .public-facts p { padding-left: 16px; border-left: 3px solid var(--public-brand); margin: 0; }
 .public-facts strong, .public-facts span { display: block; font-size: 14px; }
-.public-facts strong { color: #172033; margin-bottom: 5px; }
-.public-facts span { color: #647084; }
+.public-facts strong { color: var(--color-text); margin-bottom: 5px; }
+.public-facts span { color: var(--color-muted); }
 .public-contact { margin-top: 36px; display: grid; gap: 10px; font-size: 14px; overflow-wrap: anywhere; }
 .public-contact h2 { font-size: 14px; }
-.public-contact a, .public-footer a { color: #172033; text-underline-offset: 4px; }
-.public-reservation { background: white; border: 1px solid #e7eaf0; border-radius: 22px; padding: 30px; box-shadow: 0 16px 48px #17203308; min-width: 0; }
+.public-contact a, .public-footer a { color: var(--color-text); text-underline-offset: 4px; }
+.public-reservation { background: white; border: 1px solid var(--color-border); border-radius: 22px; padding: 30px; box-shadow: 0 16px 48px #17203308; min-width: 0; }
 .public-reservation h2 { font-size: 25px; letter-spacing: -0.6px; }
-.public-reservation p { font-size: 14px; line-height: 1.6; color: #647084; }
+.public-reservation p { font-size: 14px; line-height: 1.6; color: var(--color-muted); }
 .public-steps { display: flex; flex-wrap: wrap; list-style: none; gap: 18px; margin: 0 0 32px; padding: 0; }
-.public-steps li { display: flex; align-items: center; gap: 7px; color: #647084; font-size: 12px; }
-.public-steps span { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #dce2ec; flex-shrink: 0; }
-.public-steps li[aria-current] { font-weight: 700; color: #172033; }
+.public-steps li { display: flex; align-items: center; gap: 7px; color: var(--color-muted); font-size: 12px; }
+.public-steps span { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--color-border); flex-shrink: 0; }
+.public-steps li[aria-current] { font-weight: 700; color: var(--color-text); }
 .public-steps li[aria-current] span { background: var(--public-brand); color: var(--public-ink); border-color: var(--public-brand); }
 .public-services { display: grid; gap: 12px; margin: 24px 0; }
-.public-service { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 18px; border: 1px solid #dce2ec; border-radius: 13px; background: white; color: #172033; text-align: left; cursor: pointer; }
+.public-service { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 18px; border: 1px solid var(--color-border); border-radius: 13px; background: white; color: var(--color-text); text-align: left; cursor: pointer; }
 .public-service span { display: grid; gap: 7px; min-width: 0; overflow-wrap: anywhere; }
 .public-service > strong { flex-shrink: 0; font-size: 14px; }
-.public-service small { color: #647084; line-height: 1.5; }
+.public-service small { color: var(--color-muted); line-height: 1.5; }
 .public-service.is-selected, .public-slots .is-selected { border: 2px solid var(--public-brand); outline: 1px solid var(--public-brand); outline-offset: 1px; }
 .public-booking button { font: inherit; }
 .public-primary, .public-secondary { min-height: 48px; border-radius: 10px; font-weight: 600; padding: 12px 18px; cursor: pointer; }
 .public-primary { background: var(--public-brand); color: var(--public-ink); border: 1px solid var(--public-brand); }
 .public-services + .public-primary { width: 100%; }
-.public-secondary { background: white; color: #172033; border: 1px solid #dce2ec; }
+.public-secondary { background: white; color: var(--color-text); border: 1px solid var(--color-border); }
 .public-booking button:disabled { opacity: 0.5; cursor: not-allowed; }
 .public-field { display: grid; gap: 8px; font-size: 14px; font-weight: 600; margin: 20px 0; }
-.public-field input { width: 100%; min-width: 0; min-height: 48px; padding: 12px; border: 1px solid #dce2ec; border-radius: 10px; font: inherit; font-size: 16px; background: white; color: #172033; }
+.public-field input { width: 100%; min-width: 0; min-height: 48px; padding: 12px; border: 1px solid var(--color-border); border-radius: 10px; font: inherit; font-size: 16px; background: white; color: var(--color-text); }
 .public-timezone, .public-data-note { font-size: 12px !important; }
 .public-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 10px; max-height: 310px; overflow-y: auto; padding: 5px; margin: 18px -5px; }
-.public-slots button { min-height: 44px; border: 1px solid #dce2ec; background: white; color: #172033; border-radius: 9px; cursor: pointer; }
+.public-slots button { min-height: 44px; border: 1px solid var(--color-border); background: white; color: var(--color-text); border-radius: 9px; cursor: pointer; }
 .public-actions { display: flex; gap: 12px; margin-top: 24px; }
 .public-actions .public-primary { flex: 1; }
-.public-summary { padding: 18px; border: 1px solid #e7eaf0; border-radius: 12px; background: #f8f9fc; display: grid; gap: 9px; font-size: 14px; overflow-wrap: anywhere; }
+.public-summary { padding: 18px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-background); display: grid; gap: 9px; font-size: 14px; overflow-wrap: anywhere; }
 .public-reservation fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
 .public-reservation .public-error { color: #bf3344; padding: 12px; border: 1px solid #bf3344; border-radius: 9px; }
 .public-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(100%); }
 .public-success { display: grid; justify-items: start; gap: 10px; overflow-wrap: anywhere; }
 .public-success p { margin: 0; }
-.public-success code { max-width: 100%; overflow-wrap: anywhere; padding: 12px; background: #f8f9fc; border-radius: 8px; font-size: 13px; }
+.public-success code { max-width: 100%; overflow-wrap: anywhere; padding: 12px; background: var(--color-background); border-radius: 8px; font-size: 13px; }
 .public-success-symbol { background: var(--public-brand); color: var(--public-ink); width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 27px; margin-bottom: 12px; }
-.public-footer { border-top: 1px solid #e7eaf0; }
+.public-footer { border-top: 1px solid var(--color-border); }
 .public-loading { min-height: 100dvh; padding: 30px; display: grid; align-content: center; justify-items: center; gap: 20px; text-align: center; }
-.public-loading button { border: 1px solid #dce2ec; padding: 12px 20px; background: white; border-radius: 9px; cursor: pointer; }
+.public-loading button { border: 1px solid var(--color-border); padding: 12px 20px; background: white; border-radius: 9px; cursor: pointer; }
 @media (max-width: 800px) {
   .public-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 28px 16px 40px; }
   .public-business { padding: 0; }

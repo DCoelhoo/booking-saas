@@ -12,3 +12,20 @@ body {
 #root {
   min-height: 100vh;
 }
+:root {
+  --palette-night: #05161a;
+  --palette-deep: #072e33;
+  --palette-teal: #0c7075;
+  --palette-turquoise: #0f969c;
+  --palette-sky: #6da5c0;
+  --palette-slate: #294d61;
+  --color-text: var(--palette-night);
+  --color-muted: #496571;
+  --color-primary: var(--palette-teal);
+  --color-primary-hover: var(--palette-deep);
+  --color-background: #f0f6f7;
+  --color-border: #c8dce2;
+  --color-soft: #e3f1f1;
+  --public-brand: var(--color-primary);
+  --public-ink: white;
+}

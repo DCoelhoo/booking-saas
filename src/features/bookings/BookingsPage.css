@@ -26,7 +26,7 @@
   align-items: center;
   gap: 10px;
   background: white;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 12px;
 }
@@ -34,9 +34,9 @@
 .date-navigation button {
   width: 46px;
   height: 46px;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #f6f8fb;
+  background: var(--color-background);
   font-size: 25px;
   cursor: pointer;
 }
@@ -46,7 +46,7 @@
   min-width: 0;
   min-height: 46px;
   text-align: center;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   font: inherit;
   font-size: 14px;
@@ -58,7 +58,7 @@
   flex-direction: column;
   gap: 12px;
   background: white;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 18px;
 }
@@ -75,10 +75,10 @@
   padding: 10px 12px;
   font: inherit;
   font-size: 16px;
-  border: 1px solid #dce2ec;
+  border: 1px solid var(--color-border);
   border-radius: 9px;
   background: white;
-  color: #172033;
+  color: var(--color-text);
 }
 
 .booking-form p {
@@ -106,7 +106,7 @@
 }
 
 .empty-agenda {
-  border: 1px dashed #dce2ec;
+  border: 1px dashed var(--color-border);
   border-radius: 14px;
   padding: 30px 16px;
   text-align: center;
@@ -123,7 +123,7 @@
   gap: 12px;
   padding: 14px;
   background: white;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
 }
 
@@ -133,8 +133,8 @@
   gap: 5px;
   padding: 10px;
   border-radius: 9px;
-  background: #edf2ff;
-  color: #315cf5;
+  background: var(--color-soft);
+  color: var(--color-primary);
   white-space: nowrap;
   font-size: 13px;
 }
@@ -158,10 +158,10 @@
 
 .agenda-details span {
   font-size: 12px;
-  color: #7a8597;
+  color: var(--color-muted);
 }
 
-.agenda-details a { color: #315cf5; font-size: 12px; overflow-wrap: anywhere; }
+.agenda-details a { color: var(--color-primary); font-size: 12px; overflow-wrap: anywhere; }
 
 .agenda-delete {
   border: 0;
@@ -200,5 +200,5 @@
 }
 .booking-status { font-weight: 700; font-size: .85rem; }
 .booking-status-canceled { color: #9b2929; }
-.booking-status-completed { color: #176b45; }
+.booking-status-completed { color: var(--palette-teal); }
 .booking-status-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }

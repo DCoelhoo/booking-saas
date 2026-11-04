@@ -1,8 +1,8 @@
 
 :root {
   font-family: Inter, system-ui, Arial, sans-serif;
-  color: #172033;
-  background: #f6f8fb;
+  color: var(--color-text);
+  background: var(--color-background);
   font-synthesis: none;
 }
 
@@ -47,7 +47,7 @@ button {
 
 .eyebrow {
   font-size: 12px;
-  color: #8993a4;
+  color: var(--color-muted);
 }
 
 h1 {
@@ -61,13 +61,13 @@ h2 {
 }
 
 p {
-  color: #7a8597;
+  color: var(--color-muted);
 }
 
 .user-avatar,
 .avatar {
-  background: #e9edff;
-  color: #315cf5;
+  background: var(--color-soft);
+  color: var(--color-primary);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -99,7 +99,7 @@ p {
 .stat-card,
 .panel {
   background: white;
-  border: 1px solid #e7eaf0;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 18px;
 }
@@ -134,14 +134,14 @@ p {
   display: flex;
   align-items: center;
   gap: 14px;
-  border: 1px solid #edf0f4;
+  border: 1px solid var(--color-background);
   border-radius: 12px;
   padding: 14px;
 }
 
 .booking-time {
-  background: #edf2ff;
-  color: #315cf5;
+  background: var(--color-soft);
+  color: var(--color-primary);
   font-size: 13px;
   font-weight: 700;
   border-radius: 8px;
@@ -160,7 +160,7 @@ p {
 }
 
 .booking-details span {
-  color: #7a8597;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
@@ -177,7 +177,7 @@ p {
   grid-auto-columns: minmax(76px, 1fr);
   overflow-x: auto;
   background: white;
-  border-top: 1px solid #e7eaf0;
+  border-top: 1px solid var(--color-border);
   padding: 8px 4px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
 }
@@ -193,7 +193,7 @@ p {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #8993a4;
+  color: var(--color-muted);
   font-size: 10px;
   cursor: pointer;
 }
@@ -204,7 +204,7 @@ p {
 }
 
 .bottom-nav-item.active {
-  color: #315cf5;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -222,7 +222,7 @@ p {
     min-height: 100dvh;
     flex-shrink: 0;
     background: white;
-    border-right: 1px solid #e7eaf0;
+    border-right: 1px solid var(--color-border);
     padding: 28px 16px;
   }
 
@@ -241,7 +241,7 @@ p {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: #315cf5;
+    background: var(--color-primary);
     color: white;
   }
 
@@ -256,7 +256,7 @@ p {
     width: 100%;
     border: 0;
     background: transparent;
-    color: #647084;
+    color: var(--color-muted);
     text-align: left;
     padding: 13px 16px;
     border-radius: 9px;
@@ -264,12 +264,12 @@ p {
   }
 
   .nav-item:hover {
-    background: #f3f6ff;
+    background: var(--color-soft);
   }
 
   .nav-item.active {
-    color: #315cf5;
-    background: #edf2ff;
+    color: var(--color-primary);
+    background: var(--color-soft);
     font-weight: 600;
   }
 
@@ -279,7 +279,7 @@ p {
     gap: 10px;
     margin-top: auto;
     padding: 18px 8px 0;
-    border-top: 1px solid #e7eaf0;
+    border-top: 1px solid var(--color-border);
   }
 
   .sidebar-footer strong,
@@ -290,7 +290,7 @@ p {
 
   .sidebar-footer small {
     margin-top: 4px;
-    color: #8993a4;
+    color: var(--color-muted);
   }
 
   .main-content {
